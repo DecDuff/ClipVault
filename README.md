@@ -1,142 +1,262 @@
-# 🎬 ClipFlow
+# ClipVault - Subscription Video Clip Marketplace
 
-ClipFlow is a subscription-based platform that allows users to discover, download, and combine high-quality short video clips for content creation. Built for TikTok, Instagram Reels, and short-form editors, ClipFlow makes it easy to find compatible clips and build engaging edits quickly.
+A complete subscription-based platform for short video clips where users pay for unlimited downloads, creators earn per download, with full moderation, search, recommendations, and payment systems.
 
----
+## Features
 
-# 🚀 Features
+### User Features
+- **Subscription System**: $2.99/month or $29.99/year for unlimited downloads
+- **Discovery Feed**: TikTok-style vertical scroll with trending, new, and personalized clips
+- **Advanced Search**: Filter by mood, style, scene, duration, and orientation
+- **Clip Sets**: Create collections of clips for your edits
+- **Favorites**: Save clips for later
+- **Download History**: Track all downloaded clips
 
-## 🔍 Smart Discovery
-- Search clips by keywords, moods, styles, and scenes
-- Autocomplete suggestions for faster results
-- Advanced filters (duration, mood, style, popularity)
+### Creator Features
+- **Upload System**: Upload clips with rich metadata (tags, moods, styles)
+- **Analytics Dashboard**: Track downloads, views, and earnings
+- **Earnings**: $0.99 per 5,000 downloads + bonuses at 100K and 1M downloads
+- **Stripe Connect**: Automated payouts via Stripe
 
-## 🗂️ Categories
-- Browse by:
-  - Mood (sad, hype, chill, etc.)
-  - Style (cinematic, aesthetic, POV, etc.)
-  - Scene (night drive, city, gym, etc.)
-  - Use case (TikTok edits, reels, shorts)
+### Moderation System
+- **Reporting**: Users can report inappropriate content
+- **Auto-Moderation**: Clips with 10+ reports are auto-hidden
+- **Strike System**: 3 strikes = account suspension
+- **Admin Dashboard**: Review reports, issue strikes, ban users
+- **Content Removal**: Remove violating content with notifications
 
-## 🎞️ Clip Viewing
-- Auto-playing previews
-- Watermarked previews before download
-- Detailed clip info (tags, duration, creator)
+## Tech Stack
 
-## ⬇️ Unlimited Downloads
-- Subscription-based access
-- One-tap downloads
-- Optimized for social media formats
+- **Frontend**: Next.js 14 (App Router), React, TypeScript, Tailwind CSS
+- **Backend**: tRPC for type-safe APIs
+- **Database**: PostgreSQL with Drizzle ORM
+- **Storage**: AWS S3 (or S3-compatible)
+- **Authentication**: NextAuth.js
+- **Payments**: Stripe for subscriptions and payouts
+- **Video Processing**: FFmpeg for watermarking
 
-## 🧠 Recommendation System
-- “Works well with this” suggestions
-- Compatible clips based on mood, style, and scene
-- Behavioral recommendations (downloaded together)
+## Setup Instructions
 
-## ➕ Build a Set
-- Save and organize clips into sets
-- Reorder clips for edits
-- Download multiple clips at once
+### 1. Prerequisites
 
-## 📦 Clip Packs
-- Curated collections (e.g. “Sad Night Drive Pack”)
-- Designed for quick edit creation
+- Node.js 18+ and npm/yarn
+- PostgreSQL database
+- AWS S3 bucket (or S3-compatible storage)
+- Stripe account
+- FFmpeg installed on server
 
-## ⬆️ Creator Upload System
-- Upload short clips
-- Tag with mood, style, and scene
-- Categorize for discoverability
+### 2. Environment Variables
 
-## 📊 Creator Dashboard
-- Track downloads and earnings
-- View top-performing clips
-- Monitor account status
+Copy `.env.example` to `.env` and fill in:
 
----
+```bash
+# Database
+DATABASE_URL=postgresql://user:password@localhost:5432/clipvault
 
-# 💰 Monetization
+# NextAuth
+NEXTAUTH_SECRET=<generate-with: openssl rand -base64 32>
+NEXTAUTH_URL=http://localhost:3000
 
-## 👤 Users
-- $2.99/month or $29.99/year
-- Unlimited downloads
+# AWS S3
+AWS_REGION=us-east-1
+AWS_ACCESS_KEY_ID=your-access-key
+AWS_SECRET_ACCESS_KEY=your-secret-key
+AWS_S3_BUCKET_NAME=clipvault-videos
+AWS_S3_PUBLIC_URL=https://your-bucket.s3.amazonaws.com
 
-## 🎬 Creators
-- Earn $0.99 per 5,000 downloads
-- Bonus incentives for high-performing clips
+# Stripe
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_PUBLISHABLE_KEY=pk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+STRIPE_PRICE_ID_MONTHLY=price_...
+STRIPE_PRICE_ID_YEARLY=price_...
 
----
+# App Config
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+WATERMARK_TEXT=ClipVault
 
-# 🛡️ Trust & Safety
+# Creator Earnings
+EARNINGS_PER_5K_DOWNLOADS=0.99
+BONUS_100K_DOWNLOADS=50.00
+BONUS_1M_DOWNLOADS=500.00
+```
 
-## ⚠️ Reporting System
-- Report clips for:
-  - Copyright violations
-  - Inappropriate content
-  - Spam
-- Available on clip cards and detail pages
+### 3. Database Setup
 
-## ⚡ Moderation System
-- Automatic flagging based on reports
-- Auto-hide content with high report volume
-- Manual admin review system
+```bash
+# Install dependencies
+npm install
 
-## 🚫 Strike & Ban System
-- 1st offense: warning
-- 2nd offense: temporary restriction
-- 3rd offense: suspension
-- Severe violations: immediate ban
+# Generate database migrations
+npm run db:generate
 
-## 📩 Appeals
-- Users can appeal moderation decisions
-- Admin review and resolution system
+# Push schema to database
+npm run db:push
+```
 
----
+### 4. Stripe Setup
 
-# ⚙️ Core Systems
+1. Create products and prices in Stripe Dashboard
+2. Copy price IDs to `.env`
+3. Set up webhook endpoint: `https://your-domain.com/api/webhooks/stripe`
+4. Add webhook secret to `.env`
+5. Enable events: `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`
 
-- Subscription-based access control
-- Tagging system (moods, styles, scenes)
-- Recommendation algorithm (download-driven)
-- Clip storage and delivery
-- Creator payout tracking
+### 5. S3 Bucket Setup
 
----
+1. Create bucket with public read access for watermarked videos
+2. Set CORS policy:
 
-# 🎯 Purpose
+```json
+[
+  {
+    "AllowedHeaders": ["*"],
+    "AllowedMethods": ["GET", "PUT", "POST"],
+    "AllowedOrigins": ["*"],
+    "ExposeHeaders": []
+  }
+]
+```
 
-ClipFlow is designed to help creators:
-- Find high-quality clips instantly
-- Build edits faster
-- Access a library of content without friction
+3. Create folder structure: `videos/`, `thumbnails/`
 
----
+### 6. Run Development Server
 
-# 🧠 Vision
+```bash
+npm run dev
+```
 
-To become the go-to platform for short-form content creators by providing:
-- Unlimited access to high-quality clips
-- Smart discovery and recommendations
-- A sustainable creator monetization system
+Visit `http://localhost:3000`
 
----
+## Database Schema
 
-# ⚠️ Content Policy
+### Core Tables
 
-- Only original content is allowed
-- No copyrighted movie or TV clips
-- Violations result in removal and penalties
+- **users**: User accounts, subscriptions, creator status, bans
+- **subscriptions**: Stripe subscription records
+- **clips**: Video metadata, tags, stats, moderation status
+- **downloads**: Download history
+- **favorites**: Saved clips
+- **sets**: User-created clip collections
+- **set_items**: Clips in sets
+- **reports**: Content reports
+- **strikes**: User violations
+- **earnings**: Creator payouts
+- **notifications**: User notifications
 
----
+## API Structure
 
-# 🛠️ Future Improvements
+### tRPC Routers
 
-- AI-powered tagging and recommendations
-- Timeline-based editing tools
-- Advanced creator analytics
-- Automated moderation systems
+- `auth`: Registration
+- `clips`: Browse, search, upload, download, favorite
+- `subscriptions`: Checkout, manage subscription
+- `moderation`: Submit reports, admin review, strikes
+- `sets`: Create, manage clip collections
+- `creator`: Dashboard, earnings, analytics
 
----
+### REST Endpoints
 
-# 📌 Summary
+- `POST /api/upload`: Upload video (multipart/form-data)
+- `POST /api/webhooks/stripe`: Stripe webhook handler
 
-ClipFlow is not just a clip library — it’s a complete toolkit for building viral short-form content.
+## Deployment
+
+### Vercel (Recommended)
+
+1. Push to GitHub
+2. Connect to Vercel
+3. Add environment variables
+4. Deploy
+
+### Manual Deployment
+
+1. Build: `npm run build`
+2. Start: `npm start`
+3. Ensure FFmpeg is installed on server
+4. Set up reverse proxy (nginx/Apache)
+5. Configure SSL certificate
+
+## Customization
+
+### Pricing
+
+Edit `.env`:
+- `EARNINGS_PER_5K_DOWNLOADS`: Amount per 5K downloads
+- `BONUS_100K_DOWNLOADS`: Bonus at 100K downloads
+- `BONUS_1M_DOWNLOADS`: Bonus at 1M downloads
+
+### Categories
+
+Edit `src/types/index.ts`:
+- `MOODS`: Mood categories
+- `STYLES`: Style categories
+- `SCENES`: Scene categories
+- `USE_CASES`: Use case categories
+
+### Moderation Thresholds
+
+Edit `src/server/routers/moderation.ts`:
+- Auto-hide threshold (default: 10 reports)
+- Strike to ban threshold (default: 3 strikes)
+
+## File Structure
+
+```
+clipvault/
+├── src/
+│   ├── app/                 # Next.js pages
+│   │   ├── api/            # API routes
+│   │   ├── (auth)/         # Auth pages (login, register)
+│   │   └── (main)/         # Main app pages
+│   ├── components/         # React components
+│   │   ├── ui/            # UI primitives
+│   │   ├── clips/         # Clip-related components
+│   │   └── layout/        # Layout components
+│   ├── lib/               # Utilities
+│   │   ├── db/           # Database schema & client
+│   │   ├── trpc/         # tRPC client setup
+│   │   ├── auth.ts       # NextAuth config
+│   │   ├── stripe.ts     # Stripe helpers
+│   │   ├── s3.ts         # S3 upload/download
+│   │   ├── video.ts      # FFmpeg processing
+│   │   └── utils.ts      # Helpers
+│   ├── server/           # tRPC server
+│   │   ├── routers/     # API routers
+│   │   ├── context.ts   # tRPC context
+│   │   └── trpc.ts      # tRPC setup
+│   └── types/           # TypeScript types
+├── drizzle/             # Database migrations
+├── public/              # Static assets
+└── package.json
+```
+
+## Security Considerations
+
+1. **Content Moderation**: Review flagged content regularly
+2. **Rate Limiting**: Add rate limiting to API routes
+3. **CORS**: Restrict origins in production
+4. **Secrets**: Never commit `.env` files
+5. **Input Validation**: All inputs validated with Zod
+6. **SQL Injection**: Protected via Drizzle ORM
+7. **XSS**: React auto-escapes by default
+
+## Performance Optimization
+
+1. **Video Compression**: Compress videos before upload
+2. **CDN**: Use CloudFront or similar for video delivery
+3. **Caching**: Add Redis for feed caching
+4. **Database Indexing**: Indexes on common queries (included in schema)
+5. **Image Optimization**: Use Next.js Image component
+
+## Support & Maintenance
+
+- Monitor Stripe webhooks for failures
+- Review moderation queue daily
+- Back up database regularly
+- Update dependencies monthly
+- Monitor S3 storage costs
+
+## License
+
+Proprietary - All rights reserved
