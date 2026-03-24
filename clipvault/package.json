@@ -27,7 +27,7 @@
     "@aws-sdk/s3-request-presigner": "^3.540.0",
     "stripe": "^14.21.0",
     "next-auth": "^4.24.7",
-    @auth/drizzle-adapter": "^0.3.6,
+    "@auth/drizzle-adapter": "^0.3.6",
     "bcryptjs": "^2.4.3",
     "fluent-ffmpeg": "^2.1.2",
     "sharp": "^0.33.0",
