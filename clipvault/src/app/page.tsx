@@ -1,3 +1,4 @@
+'use client';
 import ClipCard from '@/components/ClipCard';
 
 export default function Home() {
