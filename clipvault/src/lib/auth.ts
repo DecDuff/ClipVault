@@ -1,16 +1,40 @@
-import { NextAuthOptions } from 'next-auth';
+import { NextAuthOptions, DefaultSession } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { compare } from 'bcryptjs';
 import { db } from './db';
 import { users } from './db/schema';
 import { eq } from 'drizzle-orm';
 
+// This extends the built-in session types so TypeScript doesn't complain
+declare module "next-auth" {
+  interface Session {
+    user: {
+      id: string;
+      username?: string;
+      role?: string;
+      hasActiveSubscription?: boolean;
+      isCreator?: boolean;
+    } & DefaultSession["user"]
+  }
+
+  interface User {
+    id: string;
+    username?: string | null;
+    role?: string | null;
+    hasActiveSubscription?: boolean | null;
+    isCreator?: boolean | null;
+  }
+}
+
 export const authOptions: NextAuthOptions = {
+  secret: process.env.NEXTAUTH_SECRET,
   session: {
     strategy: 'jwt',
+    maxAge: 30 * 24 * 60 * 60, // 30 days
   },
   pages: {
     signIn: '/login',
+    error: '/login',
   },
   providers: [
     CredentialsProvider({
@@ -30,7 +54,8 @@ export const authOptions: NextAuthOptions = {
           .where(eq(users.email, credentials.email))
           .limit(1);
 
-        if (!user) {
+        // Check if user exists and has a password
+        if (!user || !user.passwordHash) {
           return null;
         }
 
@@ -44,10 +69,10 @@ export const authOptions: NextAuthOptions = {
           throw new Error('Your account has been banned');
         }
 
+        // IMPORTANT: Return all the data we want to keep in the cookie
         return {
-          id: user.id,
+          id: user.id, // This is your new UUID
           email: user.email,
-          name: user.name,
           username: user.username,
           role: user.role,
           hasActiveSubscription: user.hasActiveSubscription,
@@ -58,6 +83,7 @@ export const authOptions: NextAuthOptions = {
   ],
   callbacks: {
     async jwt({ token, user, trigger, session }) {
+      // On initial login, 'user' is passed here from authorize()
       if (user) {
         token.id = user.id;
         token.username = user.username;
@@ -66,13 +92,15 @@ export const authOptions: NextAuthOptions = {
         token.isCreator = user.isCreator;
       }
 
+      // Handle session updates (e.g. after buying a subscription)
       if (trigger === 'update' && session) {
-        token = { ...token, ...session };
+        return { ...token, ...session };
       }
 
       return token;
     },
     async session({ session, token }) {
+      // Transfer data from the JWT token to the Session object
       if (token && session.user) {
         session.user.id = token.id as string;
         session.user.username = token.username as string;
