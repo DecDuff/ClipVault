@@ -1,5 +1,6 @@
 'use client';
 import { ClipCard } from '@/components/clips/ClipCard';
+import { NavButton } from '@/components/clips/NavButton'; // Added this
 import { Check, Zap, Shield, Play, Download, Search } from 'lucide-react';
 
 export default function Home() {
@@ -29,10 +30,12 @@ export default function Home() {
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <a href="/api/auth/signin" className="group relative px-10 py-4 bg-white text-black font-extrabold rounded-full transition-all hover:scale-105 active:scale-95 overflow-hidden">
-              <span className="relative z-10">Start Your Subscription</span>
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/50 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]"></div>
-            </a>
+            {/* Swapped <a> for NavButton */}
+            <NavButton 
+              href="/subscribe" 
+              label="Start Your Subscription" 
+              className="group relative px-10 py-4 bg-white text-black font-extrabold rounded-full transition-all hover:scale-105 active:scale-95 overflow-hidden" 
+            />
             <button onClick={() => document.getElementById('plans')?.scrollIntoView({ behavior: 'smooth' })} className="px-10 py-4 bg-white/5 border border-white/10 rounded-full font-bold hover:bg-white/10 transition-all">
               Browse Pricing
             </button>
@@ -82,7 +85,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* --- SUBSCRIPTION PLANS (YOUR SPECIFIC PRICING) --- */}
+      {/* --- SUBSCRIPTION PLANS --- */}
       <section id="plans" className="max-w-5xl mx-auto px-6 py-24">
         <div className="text-center mb-16">
           <h2 className="text-5xl font-black mb-4">Choose Your Plan</h2>
@@ -102,10 +105,15 @@ export default function Home() {
               <li className="flex items-center gap-2">✓ Full Search Access</li>
               <li className="flex items-center gap-2">✓ Early Access to New Packs</li>
             </ul>
-            <a href="/register" className="w-full py-4 bg-white/5 border border-white/10 rounded-2xl font-bold hover:bg-white/10 transition-colors">Select Monthly</a>
+            {/* Swapped <a> for NavButton */}
+            <NavButton 
+              href="/subscribe" 
+              label="Select Monthly" 
+              className="w-full py-4 bg-white/5 border border-white/10 rounded-2xl font-bold hover:bg-white/10 transition-colors" 
+            />
           </div>
 
-          {/* Yearly Plan (Best Value) */}
+          {/* Yearly Plan */}
           <div className="group p-10 bg-purple-600/10 rounded-[2.5rem] border-2 border-purple-500 relative flex flex-col items-center shadow-[0_0_50px_rgba(147,51,234,0.15)]">
             <div className="absolute -top-4 bg-purple-500 text-white text-[10px] font-black px-4 py-1 rounded-full uppercase tracking-widest">Best Value - 2 Months Free</div>
             <h4 className="text-xl font-bold mb-2">Annual Access</h4>
@@ -119,7 +127,12 @@ export default function Home() {
               <li className="flex items-center gap-2">✓ Custom "Build A Set" Feature</li>
               <li className="flex items-center gap-2">✓ Priority High-Res Exports</li>
             </ul>
-            <a href="/register" className="w-full py-4 bg-purple-600 text-white rounded-2xl font-bold hover:bg-purple-500 transition-colors shadow-lg shadow-purple-900/40">Get Annual Access</a>
+            {/* Swapped <a> for NavButton */}
+            <NavButton 
+              href="/subscribe" 
+              label="Get Annual Access" 
+              className="w-full py-4 bg-purple-600 text-white rounded-2xl font-bold hover:bg-purple-500 transition-colors shadow-lg shadow-purple-900/40" 
+            />
           </div>
         </div>
       </section>
@@ -131,9 +144,11 @@ export default function Home() {
           <p className="text-xl text-gray-400 mb-12">
             Upload your high-quality clips and earn <span className="text-white font-bold">$0.99 for every 5,000 downloads</span>, plus massive bonuses for milestones at 100K and 1M downloads.
           </p>
-          <a href="/creator/dashboard" className="px-10 py-4 bg-transparent border-2 border-white text-white font-bold rounded-full hover:bg-white hover:text-black transition-all">
-            Join as a Creator
-          </a>
+          <NavButton 
+            href="/creator/dashboard" 
+            label="Join as a Creator" 
+            className="px-10 py-4 bg-transparent border-2 border-white text-white font-bold rounded-full hover:bg-white hover:text-black transition-all" 
+          />
         </div>
       </section>
 
