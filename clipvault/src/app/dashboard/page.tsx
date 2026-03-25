@@ -9,12 +9,15 @@ export default function DashboardPage() {
   const [hasRefreshed, setHasRefreshed] = useState(false);
 
   useEffect(() => {
-    // Only try to update the session ONCE when the page loads
-    if (status === "authenticated" && !session?.user?.hasActiveSubscription && !hasRefreshed) {
-      update();
-      setHasRefreshed(true);
-    }
-  }, [status, session, update, hasRefreshed]);
+    const checkSubscription = async () => {
+      if (status === "authenticated" && !session?.user?.hasActiveSubscription && !hasRefreshed) {
+        // This triggers the 'jwt' and 'session' callbacks in auth.ts to run again
+        await update(); 
+        setHasRefreshed(true);
+      }
+    };
+    checkSubscription();
+  }, [status, session?.user?.hasActiveSubscription, update, hasRefreshed]);
 
   if (status === "loading") {
     return <div className="min-h-screen bg-black flex items-center justify-center text-white">Loading...</div>;
