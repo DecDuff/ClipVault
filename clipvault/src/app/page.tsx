@@ -1,7 +1,8 @@
 'use client';
+
 import { ClipCard } from '@/components/clips/ClipCard';
-import { NavButton } from '@/components/clips/NavButton'; // Added this
-import { Check, Zap, Shield, Play, Download, Search } from 'lucide-react';
+import { NavButton } from '@/components/clips/NavButton';
+import { Zap, Shield, Download, Search } from 'lucide-react';
 
 export default function Home() {
   return (
@@ -30,13 +31,16 @@ export default function Home() {
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            {/* Swapped <a> for NavButton */}
+            {/* Loop-Proof Button */}
             <NavButton 
               href="/subscribe" 
               label="Start Your Subscription" 
               className="group relative px-10 py-4 bg-white text-black font-extrabold rounded-full transition-all hover:scale-105 active:scale-95 overflow-hidden" 
             />
-            <button onClick={() => document.getElementById('plans')?.scrollIntoView({ behavior: 'smooth' })} className="px-10 py-4 bg-white/5 border border-white/10 rounded-full font-bold hover:bg-white/10 transition-all">
+            <button 
+              onClick={() => document.getElementById('plans')?.scrollIntoView({ behavior: 'smooth' })} 
+              className="px-10 py-4 bg-white/5 border border-white/10 rounded-full font-bold hover:bg-white/10 transition-all"
+            >
               Browse Pricing
             </button>
           </div>
@@ -71,15 +75,15 @@ export default function Home() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
           <ClipCard 
-            clip={{ id: "1", title: "Midnight Night Drive - Cinematic", watermarkedUrl: "", thumbnailUrl: "https://images.unsplash.com", downloadCount: 5400, favoriteCount: 120, tags: ["night", "drive"], mood: ["aesthetic", "lonely"] }}
+            clip={{ id: "1", title: "Midnight Night Drive - Cinematic", watermarkedUrl: "", thumbnailUrl: "https://images.unsplash.com/photo-1492144534655-ae79c964c9d7", downloadCount: 5400, favoriteCount: 120, tags: ["night", "drive"], mood: ["aesthetic", "lonely"] }}
             creator={{ id: "c1", username: "NightVibes", profileImage: null }}
           />
           <ClipCard 
-            clip={{ id: "2", title: "Gym Motivation POV", watermarkedUrl: "", thumbnailUrl: "https://images.unsplash.com", downloadCount: 12000, favoriteCount: 890, tags: ["gym", "workout"], mood: ["hype", "motivational"] }}
+            clip={{ id: "2", title: "Gym Motivation POV", watermarkedUrl: "", thumbnailUrl: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48", downloadCount: 12000, favoriteCount: 890, tags: ["gym", "workout"], mood: ["hype", "motivational"] }}
             creator={{ id: "c2", username: "AlphaEdits", profileImage: null }}
           />
           <ClipCard 
-            clip={{ id: "3", title: "Lofi Beach Sunset", watermarkedUrl: "", thumbnailUrl: "https://images.unsplash.com", downloadCount: 3200, favoriteCount: 45, tags: ["beach", "nature"], mood: ["chill", "aesthetic"] }}
+            clip={{ id: "3", title: "Lofi Beach Sunset", watermarkedUrl: "", thumbnailUrl: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e", downloadCount: 3200, favoriteCount: 45, tags: ["beach", "nature"], mood: ["chill", "aesthetic"] }}
             creator={{ id: "c3", username: "ZenCreator", profileImage: null }}
           />
         </div>
@@ -105,7 +109,6 @@ export default function Home() {
               <li className="flex items-center gap-2">✓ Full Search Access</li>
               <li className="flex items-center gap-2">✓ Early Access to New Packs</li>
             </ul>
-            {/* Swapped <a> for NavButton */}
             <NavButton 
               href="/subscribe" 
               label="Select Monthly" 
@@ -127,7 +130,6 @@ export default function Home() {
               <li className="flex items-center gap-2">✓ Custom "Build A Set" Feature</li>
               <li className="flex items-center gap-2">✓ Priority High-Res Exports</li>
             </ul>
-            {/* Swapped <a> for NavButton */}
             <NavButton 
               href="/subscribe" 
               label="Get Annual Access" 
@@ -142,7 +144,7 @@ export default function Home() {
         <div className="max-w-4xl mx-auto px-6 text-center">
           <h2 className="text-4xl font-black mb-6">Are you a Creator?</h2>
           <p className="text-xl text-gray-400 mb-12">
-            Upload your high-quality clips and earn <span className="text-white font-bold">$0.99 for every 5,000 downloads</span>, plus massive bonuses for milestones at 100K and 1M downloads.
+            Upload your high-quality clips and earn <span className="text-white font-bold">$0.99 for every 5,000 downloads</span>, plus massive bonuses for milestones.
           </p>
           <NavButton 
             href="/creator/dashboard" 
