@@ -2,18 +2,41 @@
 
 import { useSession } from "next-auth/react";
 import { redirect, useSearchParams } from "next/navigation";
-import { Suspense } from "react";
+import { Suspense, useState } from "react";
 
-// 1. Create a sub-component for the content
 function SubscribeContent() {
   const { data: session, status } = useSession();
   const searchParams = useSearchParams();
+  const [loading, setLoading] = useState(false);
   
   const plan = searchParams.get('plan') || 'monthly';
 
   if (status === "unauthenticated") {
     redirect("/login");
   }
+
+  const handlePayment = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plan }),
+      });
+
+      const data = await response.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        alert("Error: " + (data.error || "Could not create checkout session"));
+      }
+    } catch (error) {
+      console.error("Payment error:", error);
+      alert("Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const isYearly = plan === 'yearly';
   const price = isYearly ? "$29.99" : "$2.99";
@@ -31,31 +54,23 @@ function SubscribeContent() {
           {isYearly ? "Annual Access" : "Monthly Access"}
         </p>
         <p className="text-4xl font-black">{price}<span className="text-lg text-gray-400">{period}</span></p>
-        {isYearly && <p className="text-xs text-green-400 mt-2 font-bold">2 MONTHS FREE INCLUDED</p>}
       </div>
 
       <button 
-        onClick={() => alert(`Redirecting to Stripe for the ${plan} plan...`)}
-        className="w-full py-4 bg-white text-black font-bold rounded-xl hover:scale-105 transition-transform"
+        onClick={handlePayment}
+        disabled={loading}
+        className="w-full py-4 bg-white text-black font-bold rounded-xl hover:scale-105 transition-transform disabled:opacity-50"
       >
-        Proceed to Payment
-      </button>
-      
-      <button 
-        onClick={() => window.history.back()}
-        className="mt-4 text-gray-500 hover:text-white text-sm underline"
-      >
-        Change Plan
+        {loading ? "Redirecting to Stripe..." : "Proceed to Payment"}
       </button>
     </div>
   );
 }
 
-// 2. The main page component wraps it in Suspense
 export default function SubscribePage() {
   return (
     <div className="min-h-screen bg-black text-white p-8 flex flex-col items-center justify-center">
-      <Suspense fallback={<div className="text-white text-xl font-bold">Loading...</div>}>
+      <Suspense fallback={<div>Loading...</div>}>
         <SubscribeContent />
       </Suspense>
     </div>
