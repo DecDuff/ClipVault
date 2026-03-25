@@ -9,7 +9,7 @@ export async function POST(req: Request) {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     await db.insert(users).values({
-      id: crypto.randomUUID(),
+      id: Math.random().toString(36).substring(2, 15),
       name: username,
       email,
       password: hashedPassword,
