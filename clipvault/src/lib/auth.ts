@@ -100,13 +100,28 @@ export const authOptions: NextAuthOptions = {
       return token;
     },
     async session({ session, token }) {
-      // Transfer data from the JWT token to the Session object
       if (token && session.user) {
+        // 1. First, pull the basic info from the token as usual
         session.user.id = token.id as string;
         session.user.username = token.username as string;
         session.user.role = token.role as string;
-        session.user.hasActiveSubscription = token.hasActiveSubscription as boolean;
         session.user.isCreator = token.isCreator as boolean;
+
+        // 2. FETCH LIVE STATUS: Check the DB for the subscription status
+        // This ensures that as soon as Stripe updates Neon, the app sees it.
+        try {
+          const [dbUser] = await db
+            .select({ hasActiveSubscription: users.hasActiveSubscription })
+            .from(users)
+            .where(eq(users.id, token.id as string))
+            .limit(1);
+
+          session.user.hasActiveSubscription = dbUser?.hasActiveSubscription || false;
+        } catch (error) {
+          console.error("Session sync error:", error);
+          // Fallback to token value if DB check fails
+          session.user.hasActiveSubscription = token.hasActiveSubscription as boolean;
+        }
       }
       return session;
     },
