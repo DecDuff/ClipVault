@@ -2,8 +2,6 @@ import { NextResponse } from 'next/server';
 import { headers } from 'next/headers';
 import Stripe from 'stripe';
 import { eq } from 'drizzle-orm';
-
-// The @ symbol points to 'src', so we go @ -> lib -> db
 import { db } from '@/lib/db'; 
 import { users, subscriptions } from '@/lib/db/schema';
 
