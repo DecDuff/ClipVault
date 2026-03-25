@@ -31,9 +31,9 @@ export default function Home() {
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            {/* Loop-Proof Button */}
+            {/* Default Hero Button sends to monthly */}
             <NavButton 
-              href="/subscribe" 
+              href="/subscribe?plan=monthly" 
               label="Start Your Subscription" 
               className="group relative px-10 py-4 bg-white text-black font-extrabold rounded-full transition-all hover:scale-105 active:scale-95 overflow-hidden" 
             />
@@ -97,7 +97,7 @@ export default function Home() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-          {/* Monthly Plan */}
+          {/* Monthly Plan - Added ?plan=monthly */}
           <div className="group p-10 bg-white/5 rounded-[2.5rem] border border-white/10 hover:border-purple-500/50 transition-all flex flex-col items-center">
             <h4 className="text-xl font-bold mb-2">Monthly Access</h4>
             <div className="flex items-baseline gap-1 mb-8">
@@ -110,13 +110,13 @@ export default function Home() {
               <li className="flex items-center gap-2">✓ Early Access to New Packs</li>
             </ul>
             <NavButton 
-              href="/subscribe" 
+              href="/subscribe?plan=monthly" 
               label="Select Monthly" 
               className="w-full py-4 bg-white/5 border border-white/10 rounded-2xl font-bold hover:bg-white/10 transition-colors" 
             />
           </div>
 
-          {/* Yearly Plan */}
+          {/* Yearly Plan - Added ?plan=yearly */}
           <div className="group p-10 bg-purple-600/10 rounded-[2.5rem] border-2 border-purple-500 relative flex flex-col items-center shadow-[0_0_50px_rgba(147,51,234,0.15)]">
             <div className="absolute -top-4 bg-purple-500 text-white text-[10px] font-black px-4 py-1 rounded-full uppercase tracking-widest">Best Value - 2 Months Free</div>
             <h4 className="text-xl font-bold mb-2">Annual Access</h4>
@@ -131,7 +131,7 @@ export default function Home() {
               <li className="flex items-center gap-2">✓ Priority High-Res Exports</li>
             </ul>
             <NavButton 
-              href="/subscribe" 
+              href="/subscribe?plan=yearly" 
               label="Get Annual Access" 
               className="w-full py-4 bg-purple-600 text-white rounded-2xl font-bold hover:bg-purple-500 transition-colors shadow-lg shadow-purple-900/40" 
             />
