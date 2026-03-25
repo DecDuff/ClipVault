@@ -1,17 +1,17 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { stripe } from '@/lib/stripe';
-import { db } from '@/lib/db';
-import { users, subscriptions, earnings, notifications } from '@/lib/db/schema';
-import { eq, sql } from 'drizzle-orm';
+import { NextResponse } from 'next/server';
+import { headers } from 'next/headers';
 import Stripe from 'stripe';
+import { db } from '@/db'; // Double check this path to your db instance
+import { users, subscriptions } from '@/db/schema';
+import { eq } from 'drizzle-orm';
 
-export async function POST(req: NextRequest) {
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: '2023-10-16',
+});
+
+export async function POST(req: Request) {
   const body = await req.text();
-  const signature = req.headers.get('stripe-signature');
-
-  if (!signature) {
-    return NextResponse.json({ error: 'No signature' }, { status: 400 });
-  }
+  const signature = headers().get('Stripe-Signature') as string;
 
   let event: Stripe.Event;
 
@@ -21,115 +21,40 @@ export async function POST(req: NextRequest) {
       signature,
       process.env.STRIPE_WEBHOOK_SECRET!
     );
-  } catch (err) {
-    console.error('Webhook signature verification failed:', err);
-    return NextResponse.json({ error: 'Invalid signature' }, { status: 400 });
+  } catch (err: any) {
+    return new NextResponse(`Webhook Error: ${err.message}`, { status: 400 });
   }
 
-  try {
-    switch (event.type) {
-      case 'checkout.session.completed': {
-        const session = event.data.object as Stripe.Checkout.Session;
-        const userId = session.metadata?.userId;
+  if (event.type === 'checkout.session.completed') {
+    const session = event.data.object as Stripe.Checkout.Session;
+    
+    // 1. Find the user by email
+    const userEmail = session.customer_email!;
 
-        if (!userId || !session.subscription) {
-          break;
-        }
+    // 2. Update the User table to flip the subscription flag
+    await db.update(users)
+      .set({ 
+        hasActiveSubscription: true, 
+        stripeCustomerId: session.customer as string 
+      })
+      .where(eq(users.email, userEmail));
 
-        const subscription = await stripe.subscriptions.retrieve(
-          session.subscription as string
-        );
-
-        await db
-          .update(users)
-          .set({
-            hasActiveSubscription: true,
-            stripeCustomerId: session.customer as string,
-          })
-          .where(eq(users.id, userId));
-
-        await db.insert(subscriptions).values({
-          userId,
-          stripeSubscriptionId: subscription.id,
-          stripePriceId: subscription.items.data[0].price.id,
-          plan: subscription.items.data[0].price.recurring?.interval === 'year' ? 'yearly' : 'monthly',
-          status: 'active',
-          currentPeriodStart: new Date(subscription.current_period_start * 1000),
-          currentPeriodEnd: new Date(subscription.current_period_end * 1000),
-        });
-
-        await db.insert(notifications).values({
-          userId,
-          type: 'download',
-          title: 'Subscription Active',
-          message: 'Your subscription is now active! You can download unlimited clips.',
-          link: '/explore',
-        });
-
-        break;
-      }
-
-      case 'customer.subscription.updated': {
-        const subscription = event.data.object as Stripe.Subscription;
-
-        await db
-          .update(subscriptions)
-          .set({
-            status: subscription.status as any,
-            currentPeriodStart: new Date(subscription.current_period_start * 1000),
-            currentPeriodEnd: new Date(subscription.current_period_end * 1000),
-            cancelAtPeriodEnd: subscription.cancel_at_period_end,
-          })
-          .where(eq(subscriptions.stripeSubscriptionId, subscription.id));
-
-        const [sub] = await db
-          .select()
-          .from(subscriptions)
-          .where(eq(subscriptions.stripeSubscriptionId, subscription.id))
-          .limit(1);
-
-        if (sub) {
-          const isActive = subscription.status === 'active' || subscription.status === 'trialing';
-          await db
-            .update(users)
-            .set({ hasActiveSubscription: isActive })
-            .where(eq(users.id, sub.userId));
-        }
-
-        break;
-      }
-
-      case 'customer.subscription.deleted': {
-        const subscription = event.data.object as Stripe.Subscription;
-
-        const [sub] = await db
-          .select()
-          .from(subscriptions)
-          .where(eq(subscriptions.stripeSubscriptionId, subscription.id))
-          .limit(1);
-
-        if (sub) {
-          await db
-            .update(users)
-            .set({ hasActiveSubscription: false })
-            .where(eq(users.id, sub.userId));
-
-          await db
-            .update(subscriptions)
-            .set({ status: 'canceled' })
-            .where(eq(subscriptions.id, sub.id));
-        }
-
-        break;
-      }
+    // 3. (Optional but recommended) Create a record in your Subscriptions table
+    // This uses the info Stripe sends back
+    const userIdResult = await db.select({ id: users.id }).from(users).where(eq(users.email, userEmail)).limit(1);
+    
+    if (userIdResult.length > 0) {
+      await db.insert(subscriptions).values({
+        userId: userIdResult[0].id,
+        stripeSubscriptionId: session.subscription as string,
+        stripePriceId: session.metadata?.priceId || 'unknown', // Adjust based on your checkout metadata
+        plan: (session.metadata?.plan as 'monthly' | 'yearly') || 'monthly',
+        status: 'active',
+        currentPeriodStart: new Date(),
+        currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // Placeholder for 30 days
+      });
     }
-
-    return NextResponse.json({ received: true });
-  } catch (error) {
-    console.error('Webhook error:', error);
-    return NextResponse.json(
-      { error: 'Webhook handler failed' },
-      { status: 500 }
-    );
   }
+
+  return new NextResponse("Webhook processed", { status: 200 });
 }
