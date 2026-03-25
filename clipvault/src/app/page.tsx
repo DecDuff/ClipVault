@@ -1,5 +1,5 @@
 'use client';
-import { ClipCard } from '@/components/ClipCard';
+import { ClipCard } from '@/components/clips/ClipCard';
 
 export default function Home() {
   return (
