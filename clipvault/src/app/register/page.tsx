@@ -43,7 +43,7 @@ export default function RegisterPage() {
             onChange={(e) => setFormData({...formData, password: e.target.value})}
             required
           />
-          <button className="w-full py-4 bg-purple-600 text-white font-bold rounded-2xl hover:bg-purple-500 transition shadow-lg shadow-purple-900/20">
+          <button type="submit" className="w-full py-4 bg-purple-600 text-white font-bold rounded-2xl hover:bg-purple-500 transition shadow-lg shadow-purple-900/20">
             Create Account
           </button>
         </form>
