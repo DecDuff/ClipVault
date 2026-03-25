@@ -99,9 +99,23 @@ export default function Home() {
       <section className="max-w-6xl mx-auto px-6 py-24 border-t border-white/5">
         <h2 className="text-3xl font-bold mb-12 text-center">Community Showreel</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-          <ClipCard />
-          <ClipCard />
-          <ClipCard />
+<ClipCard 
+  clip={{
+    id: "1",
+    title: "Amazing Clip Example",
+    watermarkedUrl: "",
+    thumbnailUrl: "https://images.unsplash.com",
+    downloadCount: 1200,
+    favoriteCount: 450,
+    tags: ["viral", "cool"],
+    mood: ["energetic", "dark"]
+  }}
+  creator={{
+    id: "user1",
+    username: "CreatorName",
+  }}
+/>
+
         </div>
       </section>
 
