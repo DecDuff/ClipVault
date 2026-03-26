@@ -116,7 +116,9 @@ export const authOptions: NextAuthOptions = {
             .where(eq(users.id, token.id as string))
             .limit(1);
 
-          session.user.hasActiveSubscription = dbUser?.hasActiveSubscription || false;
+          if (dbUser) {
+            session.user.hasActiveSubscription = !!dbUser.has_active_subscription;
+          }  
         } catch (error) {
           console.error("Session sync error:", error);
           // Fallback to token value if DB check fails
