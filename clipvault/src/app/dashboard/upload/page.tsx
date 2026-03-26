@@ -51,16 +51,16 @@ export default function UploadPage() {
       const fileHash = await computeHash(file);
 
       // 2. Upload the file to Vercel
-      const newBlob = await upload(file.name, file, {
+     // Inside handleSubmit in src/app/dashboard/upload/page.tsx
+const newBlob = await upload(file.name, file, {
   access: 'public',
   handleUploadUrl: '/api/upload/process',
-  // @ts-ignore - Vercel supports this, but the local types are outdated
-  addRandomSuffix: true, 
+  // ❌ REMOVED addRandomSuffix from here
   // @ts-ignore
   onUploadGenerateClientToken: async (pathname: string) => {
     return await getBlobToken(pathname);
-        },
-      });
+  },
+});
 
       // 3. Save to Neon Database with the Hash
       await saveClipToDatabase({
