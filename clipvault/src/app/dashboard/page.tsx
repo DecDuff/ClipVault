@@ -1,35 +1,32 @@
 'use client';
 
-import { useSession, signOut } from "next-auth/react"; // Added signOut
+import { useSession, signOut } from "next-auth/react";
 import { useEffect, useState } from "react";
-import { Loader2, LogOut } from "lucide-react"; // Added LogOut icon
+import { 
+  Loader2, 
+  LogOut, 
+  Search, 
+  LayoutDashboard, 
+  Film, 
+  Heart, 
+  History, 
+  Settings,
+  Download
+} from "lucide-react";
 
 export default function DashboardPage() {
   const { data: session, update, status } = useSession();
   const [hasRefreshed, setHasRefreshed] = useState(false);
 
-  // 1. SAFE REDIRECT: Only redirect if status is definitively "unauthenticated"
   useEffect(() => {
     if (status === "unauthenticated") {
       window.location.href = "/login";
     }
   }, [status]);
 
-  // 2. DEBUG LOGS
-  useEffect(() => {
-    if (status === "authenticated") {
-      console.log("--- DEBUG IDENTITY CHECK ---");
-      console.log("Session User ID:", session?.user?.id);
-      console.log("Has Active Sub:", session?.user?.hasActiveSubscription);
-      console.log("----------------------------");
-    }
-  }, [session, status]);
-
-  // 3. AUTO-REFRESH: If they are logged in but sub is false, refresh once to check DB
   useEffect(() => {
     const checkSubscription = async () => {
       if (status === "authenticated" && !session?.user?.hasActiveSubscription && !hasRefreshed) {
-        console.log("Refreshing session to sync with Neon...");
         await update(); 
         setHasRefreshed(true);
       }
@@ -37,80 +34,112 @@ export default function DashboardPage() {
     checkSubscription();
   }, [status, session?.user?.hasActiveSubscription, update, hasRefreshed]);
 
-  // --- RENDERING LOGIC ---
-
-  // Show loader while checking session
   if (status === "loading") {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center text-white">
+      <div className="min-h-screen bg-black flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-purple-500" />
       </div>
     );
   }
 
-  // Prevent flicker during redirect
-  if (status === "unauthenticated") {
-    return null;
+  if (status === "unauthenticated" || !session?.user?.hasActiveSubscription) {
+    return null; // Handling redirects above
   }
 
-  // If session exists but subscription is false, show "Confirming Access"
-  if (!session?.user?.hasActiveSubscription) {
-    return (
-      <div className="min-h-screen bg-[#060606] text-white flex flex-col items-center justify-center p-6 text-center">
-        <div className="bg-white/5 p-10 rounded-[3rem] border border-white/10 max-w-md">
-          <Loader2 className="h-10 w-10 animate-spin text-purple-500 mx-auto mb-6" />
-          <h1 className="text-2xl font-black mb-4 italic">Confirming Access...</h1>
-          <p className="text-gray-400 mb-8">
-            Stripe is finalizing your secure access to the Vault. This usually takes 10-30 seconds.
-          </p>
-          <button 
-            onClick={() => window.location.reload()}
-            className="w-full bg-white text-black py-4 rounded-2xl font-bold hover:bg-purple-500 hover:text-white transition-all"
-          >
-            Refresh Now
-          </button>
-          <p className="mt-4 text-[10px] text-gray-600 uppercase tracking-widest">
-            Logged in as: {session?.user?.email}
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  // --- PRO DASHBOARD CONTENT ---
   return (
-    <div className="min-h-screen bg-black text-white p-10">
-      <div className="max-w-7xl mx-auto">
-        {/* UPDATED HEADER WITH SIGN OUT */}
-        <header className="flex justify-between items-center mb-10">
-          <div>
-            <h1 className="text-4xl font-black italic uppercase tracking-tighter">
-              The Vault <span className="text-purple-500 text-sm ml-2 not-italic">PRO ACCESS</span>
-            </h1>
-            <p className="text-gray-400 mt-2">Welcome back, {session?.user?.username || session?.user?.email}</p>
-          </div>
+    <div className="flex min-h-screen bg-[#060606] text-white font-sans">
+      
+      {/* --- SIDEBAR NAVIGATION --- */}
+      <aside className="w-64 border-r border-white/5 bg-black/50 backdrop-blur-xl hidden md:flex flex-col p-6 sticky top-0 h-screen">
+        <div className="mb-10 px-2">
+          <h1 className="text-xl font-black italic tracking-tighter uppercase">
+            Clip<span className="text-purple-500">Vault</span>
+          </h1>
+        </div>
 
+        <nav className="flex-1 space-y-1">
+          <SidebarItem icon={<LayoutDashboard size={18}/>} label="Library" active />
+          <SidebarItem icon={<Film size={18}/>} label="Trending" />
+          <SidebarItem icon={<Heart size={18}/>} label="Favorites" />
+          <SidebarItem icon={<History size={18}/>} label="Downloads" />
+        </nav>
+
+        <div className="pt-6 border-t border-white/5 space-y-1">
+          <SidebarItem icon={<Settings size={18}/>} label="Settings" />
           <button 
             onClick={() => signOut({ callbackUrl: '/' })}
-            className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-sm font-medium hover:bg-red-500/10 hover:border-red-500/50 hover:text-red-400 transition-all"
+            className="w-full flex items-center gap-3 px-4 py-3 text-gray-500 hover:text-red-400 hover:bg-red-500/5 rounded-xl transition-all text-sm font-medium"
           >
-            <LogOut className="h-4 w-4" />
-            Sign Out
+            <LogOut size={18} /> Sign Out
           </button>
+        </div>
+      </aside>
+
+      {/* --- MAIN CONTENT --- */}
+      <main className="flex-1 flex flex-col">
+        
+        {/* TOP BAR */}
+        <header className="h-20 border-b border-white/5 flex items-center justify-between px-8 bg-black/20 backdrop-blur-md sticky top-0 z-50">
+          <div className="relative w-full max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={16} />
+            <input 
+              type="text" 
+              placeholder="Search cinematic clips, moods, tags..." 
+              className="w-full bg-white/5 border border-white/10 rounded-full py-2 pl-10 pr-4 text-sm focus:outline-none focus:border-purple-500/50 transition-all"
+            />
+          </div>
+
+          <div className="flex items-center gap-4">
+            <div className="text-right hidden sm:block">
+              <p className="text-sm font-bold">{session?.user?.username || 'User'}</p>
+              <p className="text-[10px] text-purple-500 font-black uppercase tracking-widest">Pro Member</p>
+            </div>
+            <div className="h-10 w-10 rounded-full bg-gradient-to-tr from-purple-600 to-blue-600 border border-white/10" />
+          </div>
         </header>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-white/5 border border-white/10 p-8 rounded-3xl h-64 flex items-center justify-center">
-            <p className="text-gray-500 font-bold uppercase">Pro Feature #1</p>
+        {/* DASHBOARD GRID */}
+        <section className="p-8">
+          <div className="flex items-center justify-between mb-8">
+            <h2 className="text-2xl font-black italic uppercase">Newest Additions</h2>
+            <div className="flex gap-2">
+              <span className="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-[10px] font-bold uppercase tracking-widest text-gray-400">All Moods</span>
+              <span className="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-[10px] font-bold uppercase tracking-widest text-gray-400">Cinematic</span>
+            </div>
           </div>
-          <div className="bg-white/5 border border-white/10 p-8 rounded-3xl h-64 flex items-center justify-center">
-            <p className="text-gray-500 font-bold uppercase">Pro Feature #2</p>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {/* Placeholder for future Map loop */}
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div key={i} className="group relative aspect-[9/16] bg-white/5 rounded-2xl border border-white/10 overflow-hidden hover:border-purple-500/50 transition-all shadow-2xl">
+                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/80 z-10" />
+                
+                {/* Download Button Overlay */}
+                <button className="absolute top-4 right-4 z-20 p-2 bg-black/50 backdrop-blur-md border border-white/10 rounded-full opacity-0 group-hover:opacity-100 transition-all hover:scale-110">
+                  <Download size={18} className="text-white" />
+                </button>
+
+                <div className="absolute bottom-6 left-6 z-20">
+                  <p className="text-xs font-bold text-purple-400 uppercase mb-1">Night Drive</p>
+                  <h3 className="text-lg font-black leading-tight italic">CINEMATIC NOIR #0{i}</h3>
+                </div>
+              </div>
+            ))}
           </div>
-          <div className="bg-white/5 border border-white/10 p-8 rounded-3xl h-64 flex items-center justify-center">
-            <p className="text-gray-500 font-bold uppercase">Pro Feature #3</p>
-          </div>
-        </div>
-      </div>
+        </section>
+      </main>
     </div>
+  );
+}
+
+// Helper Component for Sidebar
+function SidebarItem({ icon, label, active = false }: { icon: React.ReactNode, label: string, active?: boolean }) {
+  return (
+    <button className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-sm font-medium ${
+      active ? 'bg-purple-600 text-white shadow-lg shadow-purple-900/20' : 'text-gray-500 hover:text-white hover:bg-white/5'
+    }`}>
+      {icon}
+      {label}
+    </button>
   );
 }
