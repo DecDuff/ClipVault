@@ -1,38 +1,38 @@
-import { NextAuthOptions, DefaultSession, DefaultUser } from 'next-auth';
-import { JWT } from 'next-auth/jwt';
+import { NextAuthOptions, DefaultSession } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { compare } from 'bcryptjs';
 import { db } from './db';
 import { users } from './db/schema';
 import { eq } from 'drizzle-orm';
 
-// This is the cleanest way to extend types without "Identical Modifier" errors
+// 1. Loose Type Definitions to kill the "Identical Modifiers" error
 declare module "next-auth" {
   interface Session {
     user: {
-      id: string;
-      username?: string | null;
-      role?: string | null;
-      hasActiveSubscription?: boolean | null;
-      isCreator?: boolean | null;
+      id: any;
+      username: any;
+      role: any;
+      hasActiveSubscription: any;
+      isCreator: any;
     } & DefaultSession["user"]
   }
 
-  interface User extends DefaultUser {
-    username?: string | null;
-    role?: string | null;
-    hasActiveSubscription?: boolean | null;
-    isCreator?: boolean | null;
+  interface User {
+    id: any;
+    username: any;
+    role: any;
+    hasActiveSubscription: any;
+    isCreator: any;
   }
 }
 
 declare module "next-auth/jwt" {
   interface JWT {
-    id?: string;
-    username?: string | null;
-    role?: string | null;
-    hasActiveSubscription?: boolean | null;
-    isCreator?: boolean | null;
+    id: any;
+    username: any;
+    role: any;
+    hasActiveSubscription: any;
+    isCreator: any;
   }
 }
 
@@ -92,9 +92,9 @@ export const authOptions: NextAuthOptions = {
       }
       return token;
     },
-    async session({ session, token }) {
+    async session({ session, token }: any) {
       if (token && session.user) {
-        session.user.id = token.id as string;
+        session.user.id = token.id;
         session.user.username = token.username;
         session.user.role = token.role;
         session.user.isCreator = token.isCreator;
