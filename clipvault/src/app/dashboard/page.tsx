@@ -1,8 +1,8 @@
 'use client';
 
-import { useSession } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react"; // Added signOut
 import { useEffect, useState } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, LogOut } from "lucide-react"; // Added LogOut icon
 
 export default function DashboardPage() {
   const { data: session, update, status } = useSession();
@@ -81,11 +81,22 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-black text-white p-10">
       <div className="max-w-7xl mx-auto">
-        <header className="mb-10">
-          <h1 className="text-4xl font-black italic uppercase tracking-tighter">
-            The Vault <span className="text-purple-500 text-sm ml-2 not-italic">PRO ACCESS</span>
-          </h1>
-          <p className="text-gray-400 mt-2">Welcome back, {session?.user?.username || session?.user?.email}</p>
+        {/* UPDATED HEADER WITH SIGN OUT */}
+        <header className="flex justify-between items-center mb-10">
+          <div>
+            <h1 className="text-4xl font-black italic uppercase tracking-tighter">
+              The Vault <span className="text-purple-500 text-sm ml-2 not-italic">PRO ACCESS</span>
+            </h1>
+            <p className="text-gray-400 mt-2">Welcome back, {session?.user?.username || session?.user?.email}</p>
+          </div>
+
+          <button 
+            onClick={() => signOut({ callbackUrl: '/' })}
+            className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-sm font-medium hover:bg-red-500/10 hover:border-red-500/50 hover:text-red-400 transition-all"
+          >
+            <LogOut className="h-4 w-4" />
+            Sign Out
+          </button>
         </header>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
