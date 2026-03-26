@@ -1,7 +1,7 @@
-import { pgTable, text, timestamp, integer, boolean, decimal, uuid, pgEnum, index, uniqueIndex } from 'drizzle-orm/pg-core';
+import { pgTable, text, timestamp, integer, boolean, decimal, uuid, pgEnum, index, uniqueIndex, varchar } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
-// Enums
+// --- ENUMS ---
 export const subscriptionStatusEnum = pgEnum('subscription_status', ['active', 'canceled', 'past_due', 'trialing']);
 export const subscriptionPlanEnum = pgEnum('subscription_plan', ['monthly', 'yearly']);
 export const reportReasonEnum = pgEnum('report_reason', ['copyright', 'inappropriate', 'spam', 'other']);
@@ -10,7 +10,7 @@ export const strikeTypeEnum = pgEnum('strike_type', ['copyright', 'inappropriate
 export const userRoleEnum = pgEnum('user_role', ['user', 'creator', 'admin', 'moderator']);
 export const banTypeEnum = pgEnum('ban_type', ['none', 'upload_ban', 'soft_ban', 'hard_ban']);
 
-// Users table
+// --- USERS TABLE ---
 export const users = pgTable('users', {
   id: uuid('id').defaultRandom().primaryKey(),
   email: text('email').notNull().unique(),
@@ -34,7 +34,7 @@ export const users = pgTable('users', {
   usernameIdx: uniqueIndex('username_idx').on(table.username),
 }));
 
-// Subscriptions table
+// --- SUBSCRIPTIONS TABLE ---
 export const subscriptions = pgTable('subscriptions', {
   id: uuid('id').defaultRandom().primaryKey(),
   userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
@@ -52,20 +52,20 @@ export const subscriptions = pgTable('subscriptions', {
   stripeSubIdIdx: uniqueIndex('stripe_subscription_id_idx').on(table.stripeSubscriptionId),
 }));
 
-// Clips table
+// --- CLIPS TABLE ---
 export const clips = pgTable('clips', {
   id: uuid('id').defaultRandom().primaryKey(),
   creatorId: uuid('creator_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
   title: text('title').notNull(),
   description: text('description'),
-  videoUrl: text('video_url').notNull(),
-  watermarkedUrl: text('watermarked_url').notNull(),
+  videoUrl: text('video_url').notNull(), // Raw high-quality file
+  watermarkedUrl: text('watermarked_url').notNull(), // Preview file
   thumbnailUrl: text('thumbnail_url').notNull(),
-  duration: integer('duration').notNull(),
-  width: integer('width').notNull(),
-  height: integer('height').notNull(),
-  fileSize: integer('file_size').notNull(),
-  isVertical: boolean('is_vertical').notNull(),
+  duration: integer('duration').default(0).notNull(),
+  width: integer('width').default(1080).notNull(),
+  height: integer('height').default(1920).notNull(),
+  fileSize: integer('file_size').default(0).notNull(),
+  isVertical: boolean('is_vertical').default(true).notNull(),
 
   // Tags and categorization
   tags: text('tags').array().notNull().default([]),
@@ -90,12 +90,10 @@ export const clips = pgTable('clips', {
 }, (table) => ({
   creatorIdIdx: index('clip_creator_id_idx').on(table.creatorId),
   tagsIdx: index('clip_tags_idx').on(table.tags),
-  moodIdx: index('clip_mood_idx').on(table.mood),
-  downloadCountIdx: index('clip_download_count_idx').on(table.downloadCount),
   createdAtIdx: index('clip_created_at_idx').on(table.createdAt),
 }));
 
-// Downloads table
+// --- DOWNLOADS TABLE ---
 export const downloads = pgTable('downloads', {
   id: uuid('id').defaultRandom().primaryKey(),
   userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
@@ -107,7 +105,7 @@ export const downloads = pgTable('downloads', {
   uniqueUserClip: uniqueIndex('unique_user_clip_download').on(table.userId, table.clipId),
 }));
 
-// Favorites table
+// --- FAVORITES TABLE ---
 export const favorites = pgTable('favorites', {
   id: uuid('id').defaultRandom().primaryKey(),
   userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
@@ -119,7 +117,7 @@ export const favorites = pgTable('favorites', {
   uniqueUserClip: uniqueIndex('unique_user_clip_favorite').on(table.userId, table.clipId),
 }));
 
-// Sets (collections) table
+// --- SETS (COLLECTIONS) ---
 export const sets = pgTable('sets', {
   id: uuid('id').defaultRandom().primaryKey(),
   userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
@@ -131,7 +129,7 @@ export const sets = pgTable('sets', {
   userIdIdx: index('set_user_id_idx').on(table.userId),
 }));
 
-// Set items table
+// --- SET ITEMS ---
 export const setItems = pgTable('set_items', {
   id: uuid('id').defaultRandom().primaryKey(),
   setId: uuid('set_id').references(() => sets.id, { onDelete: 'cascade' }).notNull(),
@@ -143,7 +141,7 @@ export const setItems = pgTable('set_items', {
   uniqueSetClip: uniqueIndex('unique_set_clip').on(table.setId, table.clipId),
 }));
 
-// Reports table
+// --- REPORTS TABLE ---
 export const reports = pgTable('reports', {
   id: uuid('id').defaultRandom().primaryKey(),
   reporterId: uuid('reporter_id').references(() => users.id, { onDelete: 'set null' }),
@@ -158,10 +156,9 @@ export const reports = pgTable('reports', {
 }, (table) => ({
   clipIdIdx: index('report_clip_id_idx').on(table.clipId),
   statusIdx: index('report_status_idx').on(table.status),
-  createdAtIdx: index('report_created_at_idx').on(table.createdAt),
 }));
 
-// Strikes table
+// --- STRIKES TABLE ---
 export const strikes = pgTable('strikes', {
   id: uuid('id').defaultRandom().primaryKey(),
   userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
@@ -174,16 +171,15 @@ export const strikes = pgTable('strikes', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
 }, (table) => ({
   userIdIdx: index('strike_user_id_idx').on(table.userId),
-  isActiveIdx: index('strike_is_active_idx').on(table.isActive),
 }));
 
-// Earnings table
+// --- EARNINGS TABLE ---
 export const earnings = pgTable('earnings', {
   id: uuid('id').defaultRandom().primaryKey(),
   creatorId: uuid('creator_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
   clipId: uuid('clip_id').references(() => clips.id, { onDelete: 'set null' }),
   amount: decimal('amount', { precision: 10, scale: 2 }).notNull(),
-  type: text('type').notNull(), // 'download', 'bonus_100k', 'bonus_1m'
+  type: text('type').notNull(), 
   description: text('description'),
   isPaid: boolean('is_paid').default(false).notNull(),
   paidAt: timestamp('paid_at'),
@@ -191,14 +187,13 @@ export const earnings = pgTable('earnings', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
 }, (table) => ({
   creatorIdIdx: index('earning_creator_id_idx').on(table.creatorId),
-  isPaidIdx: index('earning_is_paid_idx').on(table.isPaid),
 }));
 
-// Notifications table
+// --- NOTIFICATIONS TABLE ---
 export const notifications = pgTable('notifications', {
   id: uuid('id').defaultRandom().primaryKey(),
   userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
-  type: text('type').notNull(), // 'download', 'earning', 'strike', 'ban', 'report_resolved'
+  type: text('type').notNull(), 
   title: text('title').notNull(),
   message: text('message').notNull(),
   link: text('link'),
@@ -206,11 +201,10 @@ export const notifications = pgTable('notifications', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
 }, (table) => ({
   userIdIdx: index('notification_user_id_idx').on(table.userId),
-  isReadIdx: index('notification_is_read_idx').on(table.isRead),
 }));
 
-// Relations
-export const usersRelations = relations(users, ({ many, one }) => ({
+// --- RELATIONS ---
+export const usersRelations = relations(users, ({ many }) => ({
   clips: many(clips),
   downloads: many(downloads),
   favorites: many(favorites),
@@ -222,10 +216,7 @@ export const usersRelations = relations(users, ({ many, one }) => ({
 }));
 
 export const clipsRelations = relations(clips, ({ one, many }) => ({
-  creator: one(users, {
-    fields: [clips.creatorId],
-    references: [users.id],
-  }),
+  creator: one(users, { fields: [clips.creatorId], references: [users.id] }),
   downloads: many(downloads),
   favorites: many(favorites),
   reports: many(reports),
@@ -233,90 +224,42 @@ export const clipsRelations = relations(clips, ({ one, many }) => ({
 }));
 
 export const downloadsRelations = relations(downloads, ({ one }) => ({
-  user: one(users, {
-    fields: [downloads.userId],
-    references: [users.id],
-  }),
-  clip: one(clips, {
-    fields: [downloads.clipId],
-    references: [clips.id],
-  }),
+  user: one(users, { fields: [downloads.userId], references: [users.id] }),
+  clip: one(clips, { fields: [downloads.clipId], references: [clips.id] }),
 }));
 
 export const favoritesRelations = relations(favorites, ({ one }) => ({
-  user: one(users, {
-    fields: [favorites.userId],
-    references: [users.id],
-  }),
-  clip: one(clips, {
-    fields: [favorites.clipId],
-    references: [clips.id],
-  }),
+  user: one(users, { fields: [favorites.userId], references: [users.id] }),
+  clip: one(clips, { fields: [favorites.clipId], references: [clips.id] }),
 }));
 
 export const setsRelations = relations(sets, ({ one, many }) => ({
-  user: one(users, {
-    fields: [sets.userId],
-    references: [users.id],
-  }),
+  user: one(users, { fields: [sets.userId], references: [users.id] }),
   items: many(setItems),
 }));
 
 export const setItemsRelations = relations(setItems, ({ one }) => ({
-  set: one(sets, {
-    fields: [setItems.setId],
-    references: [sets.id],
-  }),
-  clip: one(clips, {
-    fields: [setItems.clipId],
-    references: [clips.id],
-  }),
+  set: one(sets, { fields: [setItems.setId], references: [sets.id] }),
+  clip: one(clips, { fields: [setItems.clipId], references: [clips.id] }),
 }));
 
 export const subscriptionsRelations = relations(subscriptions, ({ one }) => ({
-  user: one(users, {
-    fields: [subscriptions.userId],
-    references: [users.id],
-  }),
+  user: one(users, { fields: [subscriptions.userId], references: [users.id] }),
 }));
 
 export const reportsRelations = relations(reports, ({ one }) => ({
-  reporter: one(users, {
-    fields: [reports.reporterId],
-    references: [users.id],
-  }),
-  clip: one(clips, {
-    fields: [reports.clipId],
-    references: [clips.id],
-  }),
-  reviewer: one(users, {
-    fields: [reports.reviewedBy],
-    references: [users.id],
-  }),
+  reporter: one(users, { fields: [reports.reporterId], references: [users.id] }),
+  clip: one(clips, { fields: [reports.clipId], references: [clips.id] }),
+  reviewer: one(users, { fields: [reports.reviewedBy], references: [users.id] }),
 }));
 
 export const strikesRelations = relations(strikes, ({ one }) => ({
-  user: one(users, {
-    fields: [strikes.userId],
-    references: [users.id],
-  }),
-  clip: one(clips, {
-    fields: [strikes.clipId],
-    references: [clips.id],
-  }),
-  issuer: one(users, {
-    fields: [strikes.issuedBy],
-    references: [users.id],
-  }),
+  user: one(users, { fields: [strikes.userId], references: [users.id] }),
+  clip: one(clips, { fields: [strikes.clipId], references: [clips.id] }),
+  issuer: one(users, { fields: [strikes.issuedBy], references: [users.id] }),
 }));
 
 export const earningsRelations = relations(earnings, ({ one }) => ({
-  creator: one(users, {
-    fields: [earnings.creatorId],
-    references: [users.id],
-  }),
-  clip: one(clips, {
-    fields: [earnings.clipId],
-    references: [clips.id],
-  }),
+  creator: one(users, { fields: [earnings.creatorId], references: [users.id] }),
+  clip: one(clips, { fields: [earnings.clipId], references: [clips.id] }),
 }));
