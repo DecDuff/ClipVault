@@ -1,24 +1,34 @@
-import { NextAuthOptions, DefaultSession } from 'next-auth';
+import { NextAuthOptions, DefaultSession, DefaultUser } from 'next-auth';
+import { JWT } from 'next-auth/jwt';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { compare } from 'bcryptjs';
 import { db } from './db';
 import { users } from './db/schema';
 import { eq } from 'drizzle-orm';
 
-// This extends the built-in session types so TypeScript doesn't complain
+// This is the cleanest way to extend types without "Identical Modifier" errors
 declare module "next-auth" {
   interface Session {
     user: {
       id: string;
-      username?: string;
-      role?: string;
-      hasActiveSubscription?: boolean;
-      isCreator?: boolean;
+      username?: string | null;
+      role?: string | null;
+      hasActiveSubscription?: boolean | null;
+      isCreator?: boolean | null;
     } & DefaultSession["user"]
   }
 
-  interface User {
-    id: string;
+  interface User extends DefaultUser {
+    username?: string | null;
+    role?: string | null;
+    hasActiveSubscription?: boolean | null;
+    isCreator?: boolean | null;
+  }
+}
+
+declare module "next-auth/jwt" {
+  interface JWT {
+    id?: string;
     username?: string | null;
     role?: string | null;
     hasActiveSubscription?: boolean | null;
@@ -30,7 +40,7 @@ export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
   session: {
     strategy: 'jwt',
-    maxAge: 30 * 24 * 60 * 60, // 30 days
+    maxAge: 30 * 24 * 60 * 60,
   },
   pages: {
     signIn: '/login',
@@ -44,9 +54,7 @@ export const authOptions: NextAuthOptions = {
         password: { label: 'Password', type: 'password' },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          return null;
-        }
+        if (!credentials?.email || !credentials?.password) return null;
 
         const [user] = await db
           .select()
@@ -54,28 +62,17 @@ export const authOptions: NextAuthOptions = {
           .where(eq(users.email, credentials.email))
           .limit(1);
 
-        if (!user || !user.passwordHash) {
-          return null;
-        }
+        if (!user || !user.passwordHash) return null;
 
         const isPasswordValid = await compare(credentials.password, user.passwordHash);
+        if (!isPasswordValid) return null;
 
-        if (!isPasswordValid) {
-          return null;
-        }
-
-        if (user.banType === 'hard_ban') {
-          throw new Error('Your account has been banned');
-        }
-
-        // Return the user data to be encoded in the JWT
         return {
           id: user.id,
           email: user.email,
           username: user.username,
           role: user.role,
-          // Use the snake_case name from your schema here
-          hasActiveSubscription: !!user.has_active_subscription,
+          hasActiveSubscription: !!user.hasActiveSubscription,
           isCreator: user.isCreator,
         };
       },
@@ -90,23 +87,20 @@ export const authOptions: NextAuthOptions = {
         token.hasActiveSubscription = user.hasActiveSubscription;
         token.isCreator = user.isCreator;
       }
-
-      // Handle session updates (manual refresh)
       if (trigger === 'update' && session) {
         return { ...token, ...session };
       }
-
       return token;
     },
     async session({ session, token }) {
       if (token && session.user) {
         session.user.id = token.id as string;
-        session.user.username = token.username as string;
-        session.user.role = token.role as string;
-        session.user.isCreator = token.isCreator as boolean;
+        session.user.username = token.username;
+        session.user.role = token.role;
+        session.user.isCreator = token.isCreator;
+        session.user.hasActiveSubscription = token.hasActiveSubscription;
 
         try {
-          // FETCH LIVE STATUS FROM NEON
           const [dbUser] = await db
             .select()
             .from(users)
@@ -114,17 +108,12 @@ export const authOptions: NextAuthOptions = {
             .limit(1);
 
           if (dbUser) {
-            // MAP: dbUser.has_active_subscription (Neon) -> session.user.hasActiveSubscription (App)
-            session.user.hasActiveSubscription = !!dbUser.has_active_subscription;
-            
-            // Sync any other profile changes
-            session.user.username = dbUser.username || token.username as string;
-            session.user.role = dbUser.role || token.role as string;
+            session.user.hasActiveSubscription = !!dbUser.hasActiveSubscription;
+            session.user.username = dbUser.username;
+            session.user.role = dbUser.role;
           }  
         } catch (error) {
           console.error("Session sync error:", error);
-          // Fallback to the saved token value if the database is unreachable
-          session.user.hasActiveSubscription = token.hasActiveSubscription as boolean;
         }
       }
       return session;
