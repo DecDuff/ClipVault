@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Upload, FileCheck, Loader2, AlertCircle } from 'lucide-react';
+import { Upload, FileCheck, Loader2, AlertCircle, Tag, Smile } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { upload } from '@vercel/blob/client'; 
 import { getBlobToken } from '@/app/actions/blobToken';
@@ -27,6 +27,8 @@ export default function UploadPage() {
 
     const formData = new FormData(event.currentTarget);
     const file = formData.get('video') as File;
+    const title = formData.get('title') as string;
+    const mood = formData.get('mood') as string;
 
     if (!file || file.size === 0) {
       setError("Please select a video file first.");
@@ -39,22 +41,21 @@ export default function UploadPage() {
       const newBlob = await upload(file.name, file, {
         access: 'public',
         handleUploadUrl: '/api/upload/process',
-        // @ts-ignore - This silences the version mismatch error
+        // @ts-ignore
         onUploadGenerateClientToken: async (pathname: string) => {
           return await getBlobToken(pathname);
         },
       });
 
-      console.log("Blob uploaded successfully:", newBlob.url);
+      console.log("Uploaded successfully:", newBlob.url);
       
-      // ... rest of your code
-
-      // 2. Success! Redirect to library
+      // NEXT STEP: We will add the database save here using 'title' and 'mood'
+      
       router.push('/dashboard');
       router.refresh();
     } catch (err: any) {
-      console.error(err);
-      setError(err.message || "Upload failed. Check your connection.");
+      console.error("Upload Error:", err);
+      setError(err.message || "Failed to get upload token. Check your .env variables.");
       setIsUploading(false);
     }
   }
@@ -68,6 +69,7 @@ export default function UploadPage() {
         </header>
 
         <form onSubmit={handleSubmit} className="space-y-8">
+          {/* File Dropzone */}
           <div className={`relative border-2 border-dashed rounded-[2rem] p-12 transition-all flex flex-col items-center justify-center text-center ${fileName ? 'border-green-500/50 bg-green-500/5' : 'border-white/10 bg-white/5'}`}>
             <input type="file" name="video" accept="video/mp4,video/quicktime" onChange={handleFileChange} className="absolute inset-0 opacity-0 cursor-pointer z-10" />
             <div className={`h-16 w-16 rounded-full flex items-center justify-center mb-4 ${fileName ? 'bg-green-500/20' : 'bg-purple-600/20'}`}>
@@ -84,9 +86,19 @@ export default function UploadPage() {
               </div>
             )}
             
+            {/* Title Input */}
             <div>
               <label className="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Clip Title</label>
               <input name="title" type="text" placeholder="Enter title..." required className="w-full bg-black border border-white/10 rounded-xl py-3 px-4 focus:border-purple-500/50 outline-none" />
+            </div>
+
+            {/* Mood/Tags Input (Bringing this back!) */}
+            <div>
+              <label className="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Mood / Tag</label>
+              <div className="relative">
+                <Smile className="absolute left-4 top-3 text-gray-500" size={18} />
+                <input name="mood" type="text" placeholder="e.g. Hype, Tutorial, Fail..." className="w-full bg-black border border-white/10 rounded-xl py-3 pl-12 pr-4 focus:border-purple-500/50 outline-none" />
+              </div>
             </div>
 
             <button disabled={isUploading} className="w-full bg-white text-black py-4 rounded-2xl font-black uppercase hover:bg-purple-500 hover:text-white transition-all flex items-center justify-center gap-2 disabled:opacity-50">
