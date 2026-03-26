@@ -3,16 +3,14 @@ import { clips } from '@/lib/db/schema';
 import { desc } from 'drizzle-orm';
 import Link from 'next/link';
 import { 
-  Play, 
-  Clock, 
-  Tag as TagIcon, 
-  Plus, 
-  LayoutDashboard, 
-  Film, 
+  Search, 
+  LayoutGrid, 
+  Upload, 
+  TrendingUp, 
+  Heart, 
+  History, 
   Settings, 
-  Search,
-  User,
-  Zap
+  LogOut 
 } from 'lucide-react';
 
 type Clip = typeof clips.$inferSelect;
@@ -26,118 +24,106 @@ export default async function DashboardPage() {
   }
 
   return (
-    <div className="flex min-h-screen bg-[#060606] text-white">
+    <div className="flex min-h-screen bg-black text-white font-sans">
       
-      {/* --- FIXED SIDEBAR --- */}
+      {/* --- SIDEBAR --- */}
       <aside className="w-64 border-r border-white/5 flex flex-col p-6 sticky top-0 h-screen">
-        <div className="flex items-center gap-3 mb-10 px-2">
-          <div className="h-8 w-8 bg-purple-600 rounded-lg flex items-center justify-center italic font-black">V</div>
-          <span className="text-xl font-black italic tracking-tighter uppercase">Vault</span>
+        <div className="mb-10 px-2">
+          <h1 className="text-xl font-black tracking-tighter uppercase italic">
+            Clip<span className="text-purple-500">Vault</span>
+          </h1>
         </div>
 
-        <nav className="flex-1 space-y-2">
-          <Link href="/dashboard" className="flex items-center gap-3 px-4 py-3 bg-white/5 rounded-xl text-purple-400 font-bold text-sm transition-all">
-            <LayoutDashboard size={18} /> Dashboard
+        <nav className="flex-1 space-y-1">
+          <Link href="/dashboard" className="flex items-center gap-3 px-4 py-3 bg-purple-600 rounded-xl text-white font-bold text-sm">
+            <LayoutGrid size={18} /> Library
           </Link>
-          <Link href="/dashboard/library" className="flex items-center gap-3 px-4 py-3 hover:bg-white/5 rounded-xl text-gray-400 hover:text-white font-bold text-sm transition-all">
-            <Film size={18} /> My Library
+          <Link href="/dashboard/upload" className="flex items-center gap-3 px-4 py-3 text-gray-400 hover:text-white font-bold text-sm transition-all">
+            <Upload size={18} /> Upload
           </Link>
-          <Link href="/dashboard/settings" className="flex items-center gap-3 px-4 py-3 hover:bg-white/5 rounded-xl text-gray-400 hover:text-white font-bold text-sm transition-all">
-            <Settings size={18} /> Settings
+          <Link href="/dashboard/trending" className="flex items-center gap-3 px-4 py-3 text-gray-400 hover:text-white font-bold text-sm transition-all">
+            <TrendingUp size={18} /> Trending
+          </Link>
+          <Link href="/dashboard/favorites" className="flex items-center gap-3 px-4 py-3 text-gray-400 hover:text-white font-bold text-sm transition-all">
+            <Heart size={18} /> Favorites
+          </Link>
+          <Link href="/dashboard/downloads" className="flex items-center gap-3 px-4 py-3 text-gray-400 hover:text-white font-bold text-sm transition-all">
+            <History size={18} /> Downloads
           </Link>
         </nav>
 
-        <div className="mt-auto pt-6 border-t border-white/5">
-          <div className="flex items-center gap-3 px-2">
-            <div className="h-10 w-10 rounded-full bg-gradient-to-tr from-purple-500 to-blue-500 p-[2px]">
-                <div className="h-full w-full bg-black rounded-full flex items-center justify-center">
-                    <User size={18} className="text-gray-400" />
-                </div>
-            </div>
-            <div>
-              <p className="text-xs font-black uppercase tracking-tight">Editor Pro</p>
-              <p className="text-[10px] text-gray-500">Free Plan</p>
-            </div>
-          </div>
+        <div className="space-y-1 pt-6 border-t border-white/5">
+          <Link href="/settings" className="flex items-center gap-3 px-4 py-3 text-gray-500 hover:text-white font-bold text-sm transition-all text-xs">
+            <Settings size={16} /> Settings
+          </Link>
+          <button className="w-full flex items-center gap-3 px-4 py-3 text-gray-500 hover:text-white font-bold text-sm transition-all text-xs">
+            <LogOut size={16} /> Sign Out
+          </button>
         </div>
       </aside>
 
-      {/* --- MAIN CONTENT AREA --- */}
-      <main className="flex-1 p-10 overflow-y-auto">
+      {/* --- MAIN CONTENT --- */}
+      <main className="flex-1 overflow-y-auto">
         
-        {/* --- TOP NAV BAR --- */}
-        <header className="flex items-center justify-between mb-12">
-          <div className="relative w-96">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" size={16} />
+        {/* --- HEADER --- */}
+        <header className="flex items-center justify-between p-8">
+          <div className="relative w-[450px]">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" size={18} />
             <input 
               type="text" 
-              placeholder="Search your vault..." 
-              className="w-full bg-white/5 border border-white/5 rounded-2xl py-3 pl-12 pr-4 text-sm focus:border-purple-500/50 outline-none transition-all"
+              placeholder="Search cinematic clips, moods, tags..." 
+              className="w-full bg-[#111] border border-white/5 rounded-full py-2.5 pl-12 pr-4 text-sm outline-none focus:border-white/20 transition-all"
             />
           </div>
 
-          <Link href="/dashboard/upload" className="flex items-center gap-2 bg-purple-600 hover:bg-purple-500 px-6 py-3 rounded-2xl font-black uppercase text-xs tracking-widest transition-all">
-            <Plus size={16} /> New Clip
-          </Link>
+          <div className="flex items-center gap-4 text-right">
+            <div>
+              <p className="text-sm font-black">Binkus123</p>
+              <p className="text-[10px] font-bold text-purple-500 uppercase tracking-widest">Pro Member</p>
+            </div>
+            <div className="h-12 w-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600" />
+          </div>
         </header>
 
-        {/* --- HERO SECTION --- */}
-        <section className="mb-12">
-           <div className="flex items-center gap-2 mb-3">
-              <Zap size={14} className="text-purple-400 fill-purple-400" />
-              <span className="text-[10px] font-black uppercase tracking-[0.3em] text-purple-400">Featured Archive</span>
-           </div>
-           <h2 className="text-5xl font-black italic uppercase tracking-tighter">Recently <span className="text-gray-500">Captured</span></h2>
-        </section>
-
-        {/* --- CLIP GRID --- */}
-        {allClips.length === 0 ? (
-          <div className="aspect-[21/9] flex flex-col items-center justify-center border border-white/5 bg-white/[0.02] rounded-[3rem]">
-            <p className="text-gray-500 font-bold uppercase tracking-[0.2em] text-xs">No media found in vault</p>
+        {/* --- CONTENT AREA --- */}
+        <div className="px-8 pb-12">
+          <div className="flex items-center justify-between mb-8">
+            <h2 className="text-2xl font-black italic uppercase tracking-tighter">Newest Additions</h2>
+            <div className="flex gap-2">
+              <button className="px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-widest text-gray-400">All Moods</button>
+              <button className="px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-widest text-gray-400">Cinematic</button>
+            </div>
           </div>
-        ) : (
-          <div className="grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-8">
+
+          {/* --- VERTICAL ASPECT RATIO GRID --- */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {allClips.map((clip) => (
-              <div key={clip.id} className="group flex flex-col bg-[#111] border border-white/5 rounded-[2.5rem] overflow-hidden hover:border-purple-500/40 transition-all duration-500 shadow-2xl">
+              <div key={clip.id} className="group flex flex-col bg-[#0F0F0F] border border-white/5 rounded-3xl overflow-hidden transition-all">
                 
-                <div className="relative aspect-video w-full overflow-hidden bg-black">
+                {/* VERTICAL PREVIEW AREA */}
+                <div className="relative aspect-[3/4] w-full bg-[#111]">
                   <video 
                     src={clip.videoUrl || ''} 
-                    className="w-full h-full object-cover opacity-70 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700"
+                    className="w-full h-full object-cover"
                     muted
                     loop
                     onMouseOver={(e) => e.currentTarget.play()}
                     onMouseOut={(e) => { e.currentTarget.pause(); e.currentTarget.currentTime = 0; }}
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#111] via-transparent to-transparent opacity-60" />
-                </div>
-                
-                <div className="p-8">
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="text-[9px] font-black px-2 py-1 rounded-lg bg-white/5 text-gray-400 border border-white/10 uppercase tracking-widest">
-                      {clip.description || "Sequence"}
-                    </span>
-                    <div className="flex items-center gap-1 text-[9px] text-gray-500 font-bold uppercase tracking-widest">
-                      <Clock size={10} /> {clip.duration ? `${clip.duration}s` : 'RAW'}
-                    </div>
-                  </div>
-
-                  <h3 className="text-xl font-black italic uppercase tracking-tight mb-4 truncate group-hover:text-purple-400 transition-colors">
-                    {clip.title}
-                  </h3>
-
-                  <div className="flex flex-wrap gap-2">
-                    {clip.tags?.slice(0, 3).map((tag: string) => (
-                      <div key={tag} className="flex items-center gap-1 text-[9px] text-gray-500 bg-black border border-white/5 px-3 py-1.5 rounded-full lowercase">
-                        <TagIcon size={8} /> {tag}
-                      </div>
-                    ))}
+                  {/* BOTTOM INFO OVERLAY */}
+                  <div className="absolute inset-x-0 bottom-0 p-6 bg-gradient-to-t from-black via-black/40 to-transparent">
+                    <p className="text-[10px] font-black text-purple-500 uppercase tracking-widest mb-1">
+                      {clip.description || "Night Drive"}
+                    </p>
+                    <h3 className="text-lg font-black italic uppercase tracking-tighter leading-tight">
+                      {clip.title}
+                    </h3>
                   </div>
                 </div>
               </div>
             ))}
           </div>
-        )}
+        </div>
       </main>
     </div>
   );
