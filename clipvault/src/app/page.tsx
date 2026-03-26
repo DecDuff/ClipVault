@@ -117,49 +117,62 @@ export default function Home() {
       </section>
 
       {/* --- SUBSCRIPTION PLANS --- */}
-      <section id="plans" className="max-w-5xl mx-auto px-6 py-24">
-        <div className="text-center mb-16">
-          <h2 className="text-5xl font-black mb-4">Choose Your Plan</h2>
-          <p className="text-gray-400">Unlock the full ClipVault experience.</p>
-        </div>
+<section id="plans" className="max-w-5xl mx-auto px-6 py-24">
+  <div className="text-center mb-16">
+    <h2 className="text-5xl font-black mb-4">Choose Your Plan</h2>
+    <p className="text-gray-400">Unlock the full ClipVault experience.</p>
+  </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-          <div className="group p-10 bg-white/5 rounded-[2.5rem] border border-white/10 flex flex-col items-center">
-            <h4 className="text-xl font-bold mb-2">Monthly Access</h4>
-            <div className="flex items-baseline gap-1 mb-8">
-              <span className="text-5xl font-black">$2.99</span>
-              <span className="text-gray-500">/month</span>
-            </div>
-            {session?.user?.hasActiveSubscription ? (
-               <NavButton href="/dashboard" label="Already Subscribed" className="w-full py-4 bg-purple-600/20 text-purple-400 border border-purple-500/30 rounded-2xl font-bold text-center" />
-            ) : (
-              <NavButton 
-                href="/subscribe?plan=monthly" 
-                label="Select Monthly" 
-                className="w-full py-4 bg-white/5 border border-white/10 rounded-2xl font-bold hover:bg-white/10 transition-colors text-center" 
-              />
-            )}
-          </div>
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+    
+    {/* Monthly Plan */}
+    <div className="group p-10 bg-white/5 rounded-[2.5rem] border border-white/10 flex flex-col items-center">
+      <h4 className="text-xl font-bold mb-2">Monthly Access</h4>
+      <div className="flex items-baseline gap-1 mb-8">
+        <span className="text-5xl font-black">$2.99</span>
+        <span className="text-gray-500">/month</span>
+      </div>
+      
+      {session?.user?.hasActiveSubscription ? (
+         <NavButton 
+           href="/dashboard" 
+           label="Current Member: Enter Vault" 
+           className="w-full py-4 bg-white/5 border border-white/20 text-gray-400 rounded-2xl font-bold text-center hover:bg-white/10 transition-all" 
+         />
+      ) : (
+        <NavButton 
+          href="/subscribe?plan=monthly" 
+          label="Select Monthly" 
+          className="w-full py-4 bg-white/5 border border-white/10 rounded-2xl font-bold hover:bg-white/10 transition-colors text-center" 
+        />
+      )}
+    </div>
 
-          <div className="group p-10 bg-purple-600/10 rounded-[2.5rem] border-2 border-purple-500 relative flex flex-col items-center">
-            <div className="absolute -top-4 bg-purple-500 text-white text-[10px] font-black px-4 py-1 rounded-full uppercase">Best Value</div>
-            <h4 className="text-xl font-bold mb-2">Annual Access</h4>
-            <div className="flex items-baseline gap-1 mb-8">
-              <span className="text-5xl font-black">$29.99</span>
-              <span className="text-gray-500">/year</span>
-            </div>
-            {session?.user?.hasActiveSubscription ? (
-               <NavButton href="/dashboard" label="Go to Vault" className="w-full py-4 bg-purple-600 text-white rounded-2xl font-bold text-center" />
-            ) : (
-              <NavButton 
-                href="/subscribe?plan=yearly" 
-                label="Get Annual Access" 
-                className="w-full py-4 bg-purple-600 text-white rounded-2xl font-bold hover:bg-purple-500 transition-colors text-center" 
-              />
-            )}
-          </div>
-        </div>
-      </section>
+    {/* Yearly Plan */}
+    <div className="group p-10 bg-purple-600/10 rounded-[2.5rem] border-2 border-purple-500 relative flex flex-col items-center shadow-[0_0_50px_rgba(147,51,234,0.1)]">
+      <div className="absolute -top-4 bg-purple-500 text-white text-[10px] font-black px-4 py-1 rounded-full uppercase">Best Value</div>
+      <h4 className="text-xl font-bold mb-2">Annual Access</h4>
+      <div className="flex items-baseline gap-1 mb-8">
+        <span className="text-5xl font-black">$29.99</span>
+        <span className="text-gray-500">/year</span>
+      </div>
+      
+      {session?.user?.hasActiveSubscription ? (
+         <NavButton 
+           href="/dashboard" 
+           label="Current Member: Enter Vault" 
+           className="w-full py-4 bg-purple-600 text-white rounded-2xl font-bold text-center hover:bg-purple-500 transition-all shadow-lg shadow-purple-900/20" 
+         />
+      ) : (
+        <NavButton 
+          href="/subscribe?plan=yearly" 
+          label="Get Annual Access" 
+          className="w-full py-4 bg-purple-600 text-white rounded-2xl font-bold hover:bg-purple-500 transition-colors text-center" 
+        />
+      )}
+    </div>
+  </div>
+</section>
 
       <footer className="py-20 text-center text-gray-600 border-t border-white/5">
         <p className="font-bold text-white mb-4">ClipVault</p>
