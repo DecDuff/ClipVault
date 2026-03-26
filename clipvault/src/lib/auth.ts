@@ -54,7 +54,6 @@ export const authOptions: NextAuthOptions = {
           .where(eq(users.email, credentials.email))
           .limit(1);
 
-        // Check if user exists and has a password
         if (!user || !user.passwordHash) {
           return null;
         }
@@ -69,13 +68,14 @@ export const authOptions: NextAuthOptions = {
           throw new Error('Your account has been banned');
         }
 
-        // IMPORTANT: Return all the data we want to keep in the cookie
+        // Return the user data to be encoded in the JWT
         return {
-          id: user.id, // This is your new UUID
+          id: user.id,
           email: user.email,
           username: user.username,
           role: user.role,
-          hasActiveSubscription: user.hasActiveSubscription,
+          // Use the snake_case name from your schema here
+          hasActiveSubscription: !!user.has_active_subscription,
           isCreator: user.isCreator,
         };
       },
@@ -83,7 +83,6 @@ export const authOptions: NextAuthOptions = {
   ],
   callbacks: {
     async jwt({ token, user, trigger, session }) {
-      // On initial login, 'user' is passed here from authorize()
       if (user) {
         token.id = user.id;
         token.username = user.username;
@@ -92,7 +91,7 @@ export const authOptions: NextAuthOptions = {
         token.isCreator = user.isCreator;
       }
 
-      // Handle session updates (e.g. after buying a subscription)
+      // Handle session updates (manual refresh)
       if (trigger === 'update' && session) {
         return { ...token, ...session };
       }
@@ -101,27 +100,30 @@ export const authOptions: NextAuthOptions = {
     },
     async session({ session, token }) {
       if (token && session.user) {
-        // 1. First, pull the basic info from the token as usual
         session.user.id = token.id as string;
         session.user.username = token.username as string;
         session.user.role = token.role as string;
         session.user.isCreator = token.isCreator as boolean;
 
-        // 2. FETCH LIVE STATUS: Check the DB for the subscription status
-        // This ensures that as soon as Stripe updates Neon, the app sees it.
         try {
+          // FETCH LIVE STATUS FROM NEON
           const [dbUser] = await db
-            .select({ hasActiveSubscription: users.hasActiveSubscription })
+            .select()
             .from(users)
             .where(eq(users.id, token.id as string))
             .limit(1);
 
           if (dbUser) {
+            // MAP: dbUser.has_active_subscription (Neon) -> session.user.hasActiveSubscription (App)
             session.user.hasActiveSubscription = !!dbUser.has_active_subscription;
+            
+            // Sync any other profile changes
+            session.user.username = dbUser.username || token.username as string;
+            session.user.role = dbUser.role || token.role as string;
           }  
         } catch (error) {
           console.error("Session sync error:", error);
-          // Fallback to token value if DB check fails
+          // Fallback to the saved token value if the database is unreachable
           session.user.hasActiveSubscription = token.hasActiveSubscription as boolean;
         }
       }
