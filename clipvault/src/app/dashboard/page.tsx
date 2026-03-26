@@ -2,6 +2,7 @@
 
 import { useSession, signOut } from "next-auth/react";
 import { useEffect, useState } from "react";
+import Link from "next/link"; // Added for navigation
 import { 
   Loader2, 
   LogOut, 
@@ -11,7 +12,8 @@ import {
   Heart, 
   History, 
   Settings,
-  Download
+  Download,
+  Upload // Added Upload icon
 } from "lucide-react";
 
 export default function DashboardPage() {
@@ -43,7 +45,7 @@ export default function DashboardPage() {
   }
 
   if (status === "unauthenticated" || !session?.user?.hasActiveSubscription) {
-    return null; // Handling redirects above
+    return null;
   }
 
   return (
@@ -52,13 +54,20 @@ export default function DashboardPage() {
       {/* --- SIDEBAR NAVIGATION --- */}
       <aside className="w-64 border-r border-white/5 bg-black/50 backdrop-blur-xl hidden md:flex flex-col p-6 sticky top-0 h-screen">
         <div className="mb-10 px-2">
-          <h1 className="text-xl font-black italic tracking-tighter uppercase">
-            Clip<span className="text-purple-500">Vault</span>
-          </h1>
+          <Link href="/">
+            <h1 className="text-xl font-black italic tracking-tighter uppercase cursor-pointer">
+              Clip<span className="text-purple-500">Vault</span>
+            </h1>
+          </Link>
         </div>
 
         <nav className="flex-1 space-y-1">
-          <SidebarItem icon={<LayoutDashboard size={18}/>} label="Library" active />
+          <Link href="/dashboard">
+            <SidebarItem icon={<LayoutDashboard size={18}/>} label="Library" active />
+          </Link>
+          <Link href="/dashboard/upload">
+            <SidebarItem icon={<Upload size={18}/>} label="Upload" />
+          </Link>
           <SidebarItem icon={<Film size={18}/>} label="Trending" />
           <SidebarItem icon={<Heart size={18}/>} label="Favorites" />
           <SidebarItem icon={<History size={18}/>} label="Downloads" />
@@ -109,12 +118,10 @@ export default function DashboardPage() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {/* Placeholder for future Map loop */}
-            {[1, 2, 3, 4, 5, 6].map((i) => (
+            {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
               <div key={i} className="group relative aspect-[9/16] bg-white/5 rounded-2xl border border-white/10 overflow-hidden hover:border-purple-500/50 transition-all shadow-2xl">
                 <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/80 z-10" />
                 
-                {/* Download Button Overlay */}
                 <button className="absolute top-4 right-4 z-20 p-2 bg-black/50 backdrop-blur-md border border-white/10 rounded-full opacity-0 group-hover:opacity-100 transition-all hover:scale-110">
                   <Download size={18} className="text-white" />
                 </button>
@@ -132,14 +139,14 @@ export default function DashboardPage() {
   );
 }
 
-// Helper Component for Sidebar
+// Updated SidebarItem helper to handle nav links better
 function SidebarItem({ icon, label, active = false }: { icon: React.ReactNode, label: string, active?: boolean }) {
   return (
-    <button className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-sm font-medium ${
+    <div className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-sm font-medium cursor-pointer ${
       active ? 'bg-purple-600 text-white shadow-lg shadow-purple-900/20' : 'text-gray-500 hover:text-white hover:bg-white/5'
     }`}>
       {icon}
-      {label}
-    </button>
+      <span>{label}</span>
+    </div>
   );
 }
