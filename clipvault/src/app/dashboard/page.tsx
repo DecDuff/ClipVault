@@ -8,22 +8,28 @@ export default function DashboardPage() {
   const { data: session, update, status } = useSession();
   const [hasRefreshed, setHasRefreshed] = useState(false);
 
-  // --- DEBUG LOGS (Step 1) ---
+  // 1. SAFE REDIRECT: Only redirect if status is definitively "unauthenticated"
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      window.location.href = "/login";
+    }
+  }, [status]);
+
+  // 2. DEBUG LOGS
   useEffect(() => {
     if (status === "authenticated") {
       console.log("--- DEBUG IDENTITY CHECK ---");
       console.log("Session User ID:", session?.user?.id);
-      console.log("Session Email:", session?.user?.email);
-      console.log("Has Active Sub (Current Session):", session?.user?.hasActiveSubscription);
+      console.log("Has Active Sub:", session?.user?.hasActiveSubscription);
       console.log("----------------------------");
     }
   }, [session, status]);
 
+  // 3. AUTO-REFRESH: If they are logged in but sub is false, refresh once to check DB
   useEffect(() => {
     const checkSubscription = async () => {
-      // If the app thinks they aren't pro, try one manual refresh of the session
       if (status === "authenticated" && !session?.user?.hasActiveSubscription && !hasRefreshed) {
-        console.log("Triggering session update to check DB...");
+        console.log("Refreshing session to sync with Neon...");
         await update(); 
         setHasRefreshed(true);
       }
@@ -31,6 +37,9 @@ export default function DashboardPage() {
     checkSubscription();
   }, [status, session?.user?.hasActiveSubscription, update, hasRefreshed]);
 
+  // --- RENDERING LOGIC ---
+
+  // Show loader while checking session
   if (status === "loading") {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center text-white">
@@ -39,14 +48,12 @@ export default function DashboardPage() {
     );
   }
 
+  // Prevent flicker during redirect
   if (status === "unauthenticated") {
-    if (typeof window !== "undefined") {
-      window.location.href = "/login";
-    }
     return null;
   }
 
-  // If the DB hasn't updated yet or session is stuck, show the pending screen
+  // If session exists but subscription is false, show "Confirming Access"
   if (!session?.user?.hasActiveSubscription) {
     return (
       <div className="min-h-screen bg-[#060606] text-white flex flex-col items-center justify-center p-6 text-center">
@@ -82,7 +89,6 @@ export default function DashboardPage() {
         </header>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Your Dashboard Content Goes Here */}
           <div className="bg-white/5 border border-white/10 p-8 rounded-3xl h-64 flex items-center justify-center">
             <p className="text-gray-500 font-bold uppercase">Pro Feature #1</p>
           </div>
