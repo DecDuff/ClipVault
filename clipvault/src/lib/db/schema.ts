@@ -66,6 +66,7 @@ export const clips = pgTable('clips', {
   height: integer('height').default(1920).notNull(),
   fileSize: integer('file_size').default(0).notNull(),
   isVertical: boolean('is_vertical').default(true).notNull(),
+  hash: text('hash').unique(),
 
   // Tags and categorization
   tags: text('tags').array().notNull().default([]),

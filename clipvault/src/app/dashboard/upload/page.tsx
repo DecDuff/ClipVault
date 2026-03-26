@@ -7,6 +7,14 @@ import { upload } from '@vercel/blob/client';
 import { getBlobToken } from '@/app/actions/blobToken';
 import { saveClipToDatabase } from '@/app/actions/saveClip';
 
+// ✨ Utility to create the "Digital Fingerprint" (Hash)
+async function computeHash(file: File): Promise<string> {
+  const buffer = await file.arrayBuffer();
+  const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
 export default function UploadPage() {
   const [fileName, setFileName] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -39,32 +47,36 @@ export default function UploadPage() {
     }
 
     try {
-      // 1. Upload the physical file to Vercel Blob
+      // 1. Generate the Hash (Fingerprint) BEFORE uploading
+      const fileHash = await computeHash(file);
+
+      // 2. Upload the file to Vercel
       const newBlob = await upload(file.name, file, {
-        access: 'public',
-        handleUploadUrl: '/api/upload/process',
-        // @ts-ignore - silences version mismatch between client/server types
-        onUploadGenerateClientToken: async (pathname: string) => {
-          return await getBlobToken(pathname);
+  access: 'public',
+  handleUploadUrl: '/api/upload/process',
+  // @ts-ignore - Vercel supports this, but the local types are outdated
+  addRandomSuffix: true, 
+  // @ts-ignore
+  onUploadGenerateClientToken: async (pathname: string) => {
+    return await getBlobToken(pathname);
         },
       });
 
-      console.log("Uploaded to Blob:", newBlob.url);
-      
-      // 2. Save the metadata and URL to the Neon Database
+      // 3. Save to Neon Database with the Hash
       await saveClipToDatabase({
         url: newBlob.url,
         title: title,
         category: category,
         tags: tags,
+        hash: fileHash, // ✨ This fixes your TypeScript error!
       });
 
-      // 3. Success! Go back to gallery
       router.push('/dashboard');
       router.refresh();
     } catch (err: any) {
       console.error("Upload Error:", err);
-      setError(err.message || "Upload failed. Check your connection or Vercel Token.");
+      // This will now catch "This exact video has already been published..."
+      setError(err.message || "Upload failed. Try again.");
       setIsUploading(false);
     }
   }
@@ -73,27 +85,13 @@ export default function UploadPage() {
     <div className="min-h-screen bg-[#060606] text-white p-8">
       <div className="max-w-2xl mx-auto">
         <header className="mb-10">
-          <button 
-            onClick={() => router.back()} 
-            className="text-gray-500 hover:text-white mb-4 transition-all text-sm"
-          >
-            ← Back
-          </button>
-          <h1 className="text-4xl font-black italic uppercase tracking-tighter">
-            Upload to <span className="text-purple-500">Vault</span>
-          </h1>
+          <button onClick={() => router.back()} className="text-gray-500 hover:text-white mb-4 transition-all text-sm">← Back</button>
+          <h1 className="text-4xl font-black italic uppercase tracking-tighter">Upload to <span className="text-purple-500">Vault</span></h1>
         </header>
 
         <form onSubmit={handleSubmit} className="space-y-8">
-          {/* 1. FILE UPLOAD BOX */}
           <div className={`relative border-2 border-dashed rounded-[2rem] p-12 transition-all flex flex-col items-center justify-center text-center ${fileName ? 'border-green-500/50 bg-green-500/5' : 'border-white/10 bg-white/5'}`}>
-            <input 
-              type="file" 
-              name="video" 
-              accept="video/mp4,video/quicktime" 
-              onChange={handleFileChange} 
-              className="absolute inset-0 opacity-0 cursor-pointer z-10" 
-            />
+            <input type="file" name="video" accept="video/mp4,video/quicktime" onChange={handleFileChange} className="absolute inset-0 opacity-0 cursor-pointer z-10" />
             <div className={`h-16 w-16 rounded-full flex items-center justify-center mb-4 ${fileName ? 'bg-green-500/20' : 'bg-purple-600/20'}`}>
               {fileName ? <FileCheck className="text-green-500" size={32} /> : <Upload className="text-purple-500" size={32} />}
             </div>
@@ -108,55 +106,29 @@ export default function UploadPage() {
               </div>
             )}
             
-            {/* 2. TITLE BOX */}
             <div>
               <label className="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Clip Title</label>
-              <input 
-                name="title" 
-                type="text" 
-                placeholder="Enter title..." 
-                required 
-                className="w-full bg-black border border-white/10 rounded-xl py-3 px-4 focus:border-purple-500/50 outline-none" 
-              />
+              <input name="title" type="text" placeholder="Enter title..." required className="w-full bg-black border border-white/10 rounded-xl py-3 px-4 focus:border-purple-500/50 outline-none" />
             </div>
 
-            {/* 3. CATEGORY BOX */}
             <div>
               <label className="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Category</label>
               <div className="relative">
                 <LayoutGrid className="absolute left-4 top-3 text-gray-500" size={18} />
-                <input 
-                  name="category" 
-                  type="text" 
-                  placeholder="e.g. Gaming, Vlog, Tutorial..." 
-                  className="w-full bg-black border border-white/10 rounded-xl py-3 pl-12 pr-4 focus:border-purple-500/50 outline-none" 
-                />
+                <input name="category" type="text" placeholder="e.g. Gaming, Vlog, Tutorial..." className="w-full bg-black border border-white/10 rounded-xl py-3 pl-12 pr-4 focus:border-purple-500/50 outline-none" />
               </div>
             </div>
 
-            {/* 4. TAGS BOX */}
             <div>
               <label className="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Tags</label>
               <div className="relative">
                 <Tag className="absolute left-4 top-3 text-gray-500" size={18} />
-                <input 
-                  name="tags" 
-                  type="text" 
-                  placeholder="e.g. #epic, #win, #setup..." 
-                  className="w-full bg-black border border-white/10 rounded-xl py-3 pl-12 pr-4 focus:border-purple-500/50 outline-none" 
-                />
+                <input name="tags" type="text" placeholder="e.g. #epic, #win (separate with commas)" className="w-full bg-black border border-white/10 rounded-xl py-3 pl-12 pr-4 focus:border-purple-500/50 outline-none" />
               </div>
             </div>
 
-            <button 
-              disabled={isUploading} 
-              className="w-full bg-white text-black py-4 rounded-2xl font-black uppercase hover:bg-purple-500 hover:text-white transition-all flex items-center justify-center gap-2 disabled:opacity-50"
-            >
-              {isUploading ? (
-                <><Loader2 className="animate-spin" size={20} /> Syncing with Cloud...</>
-              ) : (
-                "Publish to Vault"
-              )}
+            <button disabled={isUploading} className="w-full bg-white text-black py-4 rounded-2xl font-black uppercase hover:bg-purple-500 hover:text-white transition-all flex items-center justify-center gap-2 disabled:opacity-50">
+              {isUploading ? <><Loader2 className="animate-spin" size={20} /> Analyzing & Syncing...</> : "Publish to Vault"}
             </button>
           </div>
         </form>
