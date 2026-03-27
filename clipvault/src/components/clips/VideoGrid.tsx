@@ -2,7 +2,7 @@
 
 import { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Download, Check, Zap, Link as LinkIcon } from 'lucide-react';
+import { Download, Check, Zap, Link as LinkIcon, PlusSquare } from 'lucide-react';
 
 // --- SUB-COMPONENT FOR INDIVIDUAL CARDS ---
 function VideoCard({ clip, index, handleDownload, copyMediaLink, downloadingId, copiedId }: any) {
@@ -11,7 +11,6 @@ function VideoCard({ clip, index, handleDownload, copyMediaLink, downloadingId, 
   const handleMouseEnter = () => {
     if (videoRef.current) {
       videoRef.current.play().catch(() => {
-        // Autoplay policy might block play() until user interaction
         console.log("Playback interaction required");
       });
     }
@@ -34,6 +33,13 @@ function VideoCard({ clip, index, handleDownload, copyMediaLink, downloadingId, 
       className="group relative bg-[#0A0A0A] border border-white/5 rounded-[2.5rem] overflow-hidden transition-all duration-500 hover:border-purple-500/40 hover:scale-[1.02]"
     >
       <div className="aspect-[9/16] bg-black relative overflow-hidden">
+        {/* ✅ FEATURE 1: DYNAMIC CSS WATERMARK */}
+        <div className="absolute inset-0 z-10 pointer-events-none flex items-center justify-center opacity-10 group-hover:opacity-[0.05] transition-opacity duration-700">
+          <span className="font-black text-[32px] tracking-[0.4em] uppercase italic rotate-[-45deg] select-none border-y border-white/20 py-2">
+            ClipVault
+          </span>
+        </div>
+
         <video 
           ref={videoRef}
           src={clip.videoUrl} 
@@ -44,7 +50,7 @@ function VideoCard({ clip, index, handleDownload, copyMediaLink, downloadingId, 
         />
 
         {/* Vault-X Progress Bar */}
-        <div className="absolute bottom-0 left-0 w-full h-1 bg-white/10 overflow-hidden">
+        <div className="absolute bottom-0 left-0 w-full h-1 bg-white/10 overflow-hidden z-20">
           <motion.div 
             initial={{ x: "-100%" }}
             whileHover={{ x: "0%" }}
@@ -61,14 +67,15 @@ function VideoCard({ clip, index, handleDownload, copyMediaLink, downloadingId, 
           </div>
         </div>
 
-        <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-80" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-80 z-10" />
         
-        <div className="absolute inset-x-0 bottom-0 p-8 flex flex-col gap-1">
+        <div className="absolute inset-x-0 bottom-0 p-8 flex flex-col gap-1 z-30">
           <h3 className="text-xl font-black italic uppercase tracking-tighter truncate mb-4 group-hover:text-purple-400 transition-colors">
             {clip.title}
           </h3>
 
           <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 translate-y-4 group-hover:translate-y-0 transition-all duration-500">
+            {/* Download Button */}
             <button 
               onClick={(e) => handleDownload(e, clip.videoUrl, clip.title, clip.id)}
               className="flex-1 flex items-center justify-center gap-2 bg-white text-black hover:bg-purple-500 hover:text-white px-4 py-3 rounded-xl transition-all font-black text-[10px] uppercase tracking-widest"
@@ -77,6 +84,15 @@ function VideoCard({ clip, index, handleDownload, copyMediaLink, downloadingId, 
               {downloadingId === clip.id ? 'Saved' : 'Get Clip'}
             </button>
 
+            {/* ✅ FEATURE 3: ADD TO SET (The Organizer) */}
+            <button 
+              className="bg-white/10 hover:bg-purple-500/20 backdrop-blur-md p-3 rounded-xl transition-all border border-white/10 group/plus"
+              title="Add to Set"
+            >
+              <PlusSquare size={16} className="text-white group-hover:text-purple-400 transition-colors" />
+            </button>
+
+            {/* Direct Link Button */}
             <button 
               onClick={(e) => copyMediaLink(e, clip.videoUrl, clip.id)}
               className="bg-white/10 hover:bg-white/20 backdrop-blur-md p-3 rounded-xl transition-all border border-white/10"
