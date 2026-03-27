@@ -1,140 +1,112 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Download, Check, Zap } from 'lucide-react';
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Download, Check, Play, Zap, Link as LinkIcon } from 'lucide-react';
 
 export default function VideoGrid({ clips }: { clips: any[] }) {
-  const [isMounted, setIsMounted] = useState(false);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const handleDownload = async (e: React.MouseEvent, url: string, title: string, id: string) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
+    e.preventDefault(); e.stopPropagation();
     setDownloadingId(id);
-
     try {
-      // Fetch the video data
       const response = await fetch(url);
       const blob = await response.blob();
-      
-      // Create a temporary local URL for the blob
       const blobUrl = window.URL.createObjectURL(blob);
-      
-      // Create a hidden anchor tag to trigger the download
       const link = document.createElement('a');
       link.href = blobUrl;
-      // Clean up the filename: "My Awesome Video" -> "My_Awesome_Video.mp4"
       link.download = `${title.replace(/\s+/g, '_')}_Vault.mp4`;
-      
       document.body.appendChild(link);
       link.click();
-      
-      // Clean up
       document.body.removeChild(link);
       window.URL.revokeObjectURL(blobUrl);
-    } catch (err) {
-      console.error("Download failed:", err);
-      alert("Vault error: Could not process download. Please try again.");
     } finally {
-      // Show success state for 2 seconds
       setTimeout(() => setDownloadingId(null), 2000);
     }
   };
 
-  if (!isMounted) {
-    return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 opacity-0">
-        {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="aspect-[9/16] bg-white/5 rounded-[2rem] animate-pulse" />
-        ))}
-      </div>
-    );
-  }
-
-  if (clips.length === 0) {
-    return (
-      <div className="aspect-[21/9] rounded-[2.5rem] border border-white/5 bg-white/[0.02] flex flex-col items-center justify-center gap-4">
-        <Zap className="text-gray-800" size={40} />
-        <p className="text-gray-600 font-black uppercase tracking-[0.3em] text-[10px] italic">Archive Empty</p>
-      </div>
-    );
-  }
+  // ✅ STEP 4: Direct Media Link for Editors
+  const copyMediaLink = async (e: React.MouseEvent, url: string, id: string) => {
+    e.preventDefault(); e.stopPropagation();
+    await navigator.clipboard.writeText(url);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-      {clips.map((clip) => (
-        <div 
-          key={clip.id} 
-          className="group relative bg-[#0A0A0A] border border-white/5 rounded-[2.5rem] overflow-hidden transition-all duration-500 hover:border-purple-500/40 hover:scale-[1.02] hover:shadow-[0_0_50px_-12px_rgba(168,85,247,0.3)]"
+    // ✅ STEP 3: Staggered Entrance Animation
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8"
+    >
+      {clips.map((clip, index) => (
+        <motion.div 
+          key={clip.id}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: index * 0.05 }}
+          className="group relative bg-[#0A0A0A] border border-white/5 rounded-[2.5rem] overflow-hidden transition-all duration-500 hover:border-purple-500/40 hover:scale-[1.02]"
         >
-          <div className="aspect-[9/16] bg-black relative">
+          <div className="aspect-[9/16] bg-black relative overflow-hidden">
             <video 
               src={clip.videoUrl} 
               className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-all duration-700"
-              muted 
-              loop 
-              playsInline
-              onContextMenu={(e) => e.preventDefault()}
+              muted loop playsInline
               onMouseOver={(e) => e.currentTarget.play()}
-              onMouseOut={(e) => {
-                e.currentTarget.pause();
-                e.currentTarget.currentTime = 0;
-              }}
+              onMouseOut={(e) => { e.currentTarget.pause(); e.currentTarget.currentTime = 0; }}
             />
 
-            {/* Top Info Badge */}
-            <div className="absolute top-5 right-5 z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-              <div className="bg-black/60 backdrop-blur-xl border border-white/10 px-3 py-1.5 rounded-full flex items-center gap-2">
-                <div className="h-1.5 w-1.5 bg-purple-500 rounded-full animate-pulse" />
-                <span className="text-[8px] font-black uppercase tracking-widest text-white/90">
-                  4K RAW
-                </span>
+            {/* ✅ STEP 1: Vault-X Progress Bar (Visual Polish) */}
+            <div className="absolute bottom-0 left-0 w-full h-1 bg-white/10 overflow-hidden">
+              <motion.div 
+                initial={{ x: "-100%" }}
+                whileHover={{ x: "0%" }}
+                transition={{ duration: 3, ease: "linear" }}
+                className="h-full bg-purple-500 shadow-[0_0_10px_#A855F7]"
+              />
+            </div>
+
+            {/* 4K Badge */}
+            <div className="absolute top-5 right-5 z-20 opacity-0 group-hover:opacity-100 transition-all">
+              <div className="bg-purple-600 px-3 py-1 rounded-full flex items-center gap-2 shadow-lg shadow-purple-500/20">
+                <Zap size={10} fill="white" />
+                <span className="text-[8px] font-black uppercase tracking-widest text-white">RAW 4K</span>
               </div>
             </div>
 
-            <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent pointer-events-none" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-80" />
             
             <div className="absolute inset-x-0 bottom-0 p-8 flex flex-col gap-1">
-              <p className="text-[10px] font-black text-purple-500 uppercase tracking-[0.25em] translate-y-2 group-hover:translate-y-0 transition-transform duration-500">
-                {clip.description || 'Raw Sequence'}
-              </p>
-              
-              <h3 className="text-xl font-black italic uppercase tracking-tighter truncate leading-tight mb-4 transform group-hover:text-purple-100 transition-colors duration-300">
+              <h3 className="text-xl font-black italic uppercase tracking-tighter truncate mb-4 group-hover:text-purple-400 transition-colors">
                 {clip.title}
               </h3>
 
-              <div className="flex items-center justify-between opacity-0 group-hover:opacity-100 translate-y-4 group-hover:translate-y-0 transition-all duration-500 delay-75 pointer-events-auto">
+              <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 translate-y-4 group-hover:translate-y-0 transition-all duration-500">
+                {/* Download Button */}
                 <button 
                   onClick={(e) => handleDownload(e, clip.videoUrl, clip.title, clip.id)}
-                  className="flex items-center gap-2 bg-white/10 hover:bg-purple-600 backdrop-blur-md border border-white/20 px-4 py-2 rounded-xl transition-all group/btn active:scale-95"
+                  className="flex-1 flex items-center justify-center gap-2 bg-white text-black hover:bg-purple-500 hover:text-white px-4 py-3 rounded-xl transition-all font-black text-[10px] uppercase tracking-widest"
                 >
-                  {downloadingId === clip.id ? (
-                    <Check size={14} className="text-white animate-in zoom-in" />
-                  ) : (
-                    <Download size={14} className="text-white group-hover/btn:-translate-y-0.5 transition-transform" />
-                  )}
-                  <span className="text-[9px] font-black uppercase tracking-widest text-white">
-                    {downloadingId === clip.id ? 'Ready' : 'Download'}
-                  </span>
+                  {downloadingId === clip.id ? <Check size={14} /> : <Download size={14} />}
+                  {downloadingId === clip.id ? 'Saved' : 'Get Clip'}
                 </button>
 
-                <div className="flex gap-1.5">
-                  {clip.tags?.slice(0, 2).map((tag: string) => (
-                    <span key={tag} className="text-[7px] font-black border border-white/5 bg-white/5 px-2.5 py-1 rounded-lg uppercase tracking-widest text-gray-400">
-                      {tag}
-                    </span>
-                  ))}
-                </div>
+                {/* ✅ STEP 4: Media Link Button */}
+                <button 
+                  onClick={(e) => copyMediaLink(e, clip.videoUrl, clip.id)}
+                  className="bg-white/10 hover:bg-white/20 backdrop-blur-md p-3 rounded-xl transition-all border border-white/10"
+                  title="Copy Direct Media URL"
+                >
+                  {copiedId === clip.id ? <Check size={14} className="text-green-400" /> : <LinkIcon size={14} />}
+                </button>
               </div>
             </div>
           </div>
-        </div>
+        </motion.div>
       ))}
-    </div>
+    </motion.div>
   );
 }
