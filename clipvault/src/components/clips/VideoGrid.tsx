@@ -1,9 +1,97 @@
 'use client';
 
-import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Download, Check, Play, Zap, Link as LinkIcon } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { motion } from 'framer-motion';
+import { Download, Check, Zap, Link as LinkIcon } from 'lucide-react';
 
+// --- SUB-COMPONENT FOR INDIVIDUAL CARDS ---
+function VideoCard({ clip, index, handleDownload, copyMediaLink, downloadingId, copiedId }: any) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  const handleMouseEnter = () => {
+    if (videoRef.current) {
+      videoRef.current.play().catch(() => {
+        // Autoplay policy might block play() until user interaction
+        console.log("Playback interaction required");
+      });
+    }
+  };
+
+  const handleMouseLeave = () => {
+    if (videoRef.current) {
+      videoRef.current.pause();
+      videoRef.current.currentTime = 0;
+    }
+  };
+
+  return (
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.05 }}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      className="group relative bg-[#0A0A0A] border border-white/5 rounded-[2.5rem] overflow-hidden transition-all duration-500 hover:border-purple-500/40 hover:scale-[1.02]"
+    >
+      <div className="aspect-[9/16] bg-black relative overflow-hidden">
+        <video 
+          ref={videoRef}
+          src={clip.videoUrl} 
+          className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-all duration-700"
+          muted 
+          loop 
+          playsInline
+        />
+
+        {/* Vault-X Progress Bar */}
+        <div className="absolute bottom-0 left-0 w-full h-1 bg-white/10 overflow-hidden">
+          <motion.div 
+            initial={{ x: "-100%" }}
+            whileHover={{ x: "0%" }}
+            transition={{ duration: 3, ease: "linear" }}
+            className="h-full bg-purple-500 shadow-[0_0_10px_#A855F7]"
+          />
+        </div>
+
+        {/* 4K Badge */}
+        <div className="absolute top-5 right-5 z-20 opacity-0 group-hover:opacity-100 transition-all">
+          <div className="bg-purple-600 px-3 py-1 rounded-full flex items-center gap-2 shadow-lg shadow-purple-500/20">
+            <Zap size={10} fill="white" />
+            <span className="text-[8px] font-black uppercase tracking-widest text-white">RAW 4K</span>
+          </div>
+        </div>
+
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-80" />
+        
+        <div className="absolute inset-x-0 bottom-0 p-8 flex flex-col gap-1">
+          <h3 className="text-xl font-black italic uppercase tracking-tighter truncate mb-4 group-hover:text-purple-400 transition-colors">
+            {clip.title}
+          </h3>
+
+          <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 translate-y-4 group-hover:translate-y-0 transition-all duration-500">
+            <button 
+              onClick={(e) => handleDownload(e, clip.videoUrl, clip.title, clip.id)}
+              className="flex-1 flex items-center justify-center gap-2 bg-white text-black hover:bg-purple-500 hover:text-white px-4 py-3 rounded-xl transition-all font-black text-[10px] uppercase tracking-widest"
+            >
+              {downloadingId === clip.id ? <Check size={14} /> : <Download size={14} />}
+              {downloadingId === clip.id ? 'Saved' : 'Get Clip'}
+            </button>
+
+            <button 
+              onClick={(e) => copyMediaLink(e, clip.videoUrl, clip.id)}
+              className="bg-white/10 hover:bg-white/20 backdrop-blur-md p-3 rounded-xl transition-all border border-white/10"
+              title="Copy Direct Media URL"
+            >
+              {copiedId === clip.id ? <Check size={14} className="text-green-400" /> : <LinkIcon size={14} />}
+            </button>
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+// --- MAIN GRID COMPONENT ---
 export default function VideoGrid({ clips }: { clips: any[] }) {
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -27,7 +115,6 @@ export default function VideoGrid({ clips }: { clips: any[] }) {
     }
   };
 
-  // ✅ STEP 4: Direct Media Link for Editors
   const copyMediaLink = async (e: React.MouseEvent, url: string, id: string) => {
     e.preventDefault(); e.stopPropagation();
     await navigator.clipboard.writeText(url);
@@ -36,76 +123,21 @@ export default function VideoGrid({ clips }: { clips: any[] }) {
   };
 
   return (
-    // ✅ STEP 3: Staggered Entrance Animation
     <motion.div 
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
       className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8"
     >
       {clips.map((clip, index) => (
-        <motion.div 
+        <VideoCard 
           key={clip.id}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: index * 0.05 }}
-          className="group relative bg-[#0A0A0A] border border-white/5 rounded-[2.5rem] overflow-hidden transition-all duration-500 hover:border-purple-500/40 hover:scale-[1.02]"
-        >
-          <div className="aspect-[9/16] bg-black relative overflow-hidden">
-            <video 
-              src={clip.videoUrl} 
-              className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-all duration-700"
-              muted loop playsInline
-              onMouseOver={(e) => e.currentTarget.play()}
-              onMouseOut={(e) => { e.currentTarget.pause(); e.currentTarget.currentTime = 0; }}
-            />
-
-            {/* ✅ STEP 1: Vault-X Progress Bar (Visual Polish) */}
-            <div className="absolute bottom-0 left-0 w-full h-1 bg-white/10 overflow-hidden">
-              <motion.div 
-                initial={{ x: "-100%" }}
-                whileHover={{ x: "0%" }}
-                transition={{ duration: 3, ease: "linear" }}
-                className="h-full bg-purple-500 shadow-[0_0_10px_#A855F7]"
-              />
-            </div>
-
-            {/* 4K Badge */}
-            <div className="absolute top-5 right-5 z-20 opacity-0 group-hover:opacity-100 transition-all">
-              <div className="bg-purple-600 px-3 py-1 rounded-full flex items-center gap-2 shadow-lg shadow-purple-500/20">
-                <Zap size={10} fill="white" />
-                <span className="text-[8px] font-black uppercase tracking-widest text-white">RAW 4K</span>
-              </div>
-            </div>
-
-            <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-80" />
-            
-            <div className="absolute inset-x-0 bottom-0 p-8 flex flex-col gap-1">
-              <h3 className="text-xl font-black italic uppercase tracking-tighter truncate mb-4 group-hover:text-purple-400 transition-colors">
-                {clip.title}
-              </h3>
-
-              <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 translate-y-4 group-hover:translate-y-0 transition-all duration-500">
-                {/* Download Button */}
-                <button 
-                  onClick={(e) => handleDownload(e, clip.videoUrl, clip.title, clip.id)}
-                  className="flex-1 flex items-center justify-center gap-2 bg-white text-black hover:bg-purple-500 hover:text-white px-4 py-3 rounded-xl transition-all font-black text-[10px] uppercase tracking-widest"
-                >
-                  {downloadingId === clip.id ? <Check size={14} /> : <Download size={14} />}
-                  {downloadingId === clip.id ? 'Saved' : 'Get Clip'}
-                </button>
-
-                {/* ✅ STEP 4: Media Link Button */}
-                <button 
-                  onClick={(e) => copyMediaLink(e, clip.videoUrl, clip.id)}
-                  className="bg-white/10 hover:bg-white/20 backdrop-blur-md p-3 rounded-xl transition-all border border-white/10"
-                  title="Copy Direct Media URL"
-                >
-                  {copiedId === clip.id ? <Check size={14} className="text-green-400" /> : <LinkIcon size={14} />}
-                </button>
-              </div>
-            </div>
-          </div>
-        </motion.div>
+          clip={clip}
+          index={index}
+          handleDownload={handleDownload}
+          copyMediaLink={copyMediaLink}
+          downloadingId={downloadingId}
+          copiedId={copiedId}
+        />
       ))}
     </motion.div>
   );
