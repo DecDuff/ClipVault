@@ -3,6 +3,7 @@ import { clips } from '@/lib/db/schema';
 import { desc } from 'drizzle-orm';
 import VideoGrid from '@/components/clips/VideoGrid';
 import { Layers, Zap, HardDrive, PlayCircle } from 'lucide-react';
+import Sidebar from '@/components/clips/layout/Sidebar';
 
 export const dynamic = 'force-dynamic';
 
