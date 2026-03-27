@@ -37,7 +37,7 @@ export default function UploadPage() {
     const file = formData.get('video') as File;
     const title = formData.get('title') as string;
     const category = formData.get('category') as string;
-    const tags = formData.get('tags') as string; // Keep as string for the action
+    const tagsRaw = formData.get('tags') as string;
 
     if (!file || file.size === 0) {
       setError("Please select a video file first.");
@@ -57,13 +57,16 @@ export default function UploadPage() {
         },
       });
 
-      // Match your action's expected type: { url, title, category, tags, hash }
+      // ✨ Mapping to match your updated SaveClipParams interface
       await saveClipToDatabase({
         url: newBlob.url,
         title: title,
-        category: category || "General",
-        tags: tags || "", // Sending as string to satisfy saveClip.ts
+        description: category || "General",
         hash: fileHash,
+        // ✅ Converting string to string[] to match schema
+        tags: tagsRaw ? tagsRaw.split(',').map(tag => tag.trim()).filter(Boolean) : [],
+        mood: [], // Default empty array for required field
+        style: [], // Default empty array for required field
       });
 
       router.push('/dashboard');
