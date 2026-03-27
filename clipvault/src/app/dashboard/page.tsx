@@ -1,80 +1,91 @@
 import { db } from '@/lib/db';
 import { clips } from '@/lib/db/schema';
 import { desc } from 'drizzle-orm';
-import Link from 'next/link';
-import { 
-  Search, LayoutGrid, Upload, TrendingUp, Settings 
-} from 'lucide-react';
-
-// ✅ FIX ERROR 2307: Changed path to include /clips/ subfolder
-import VideoGrid from '@/components/clips/VideoGrid'; 
+import VideoGrid from '@/components/clips/VideoGrid';
+import { Layers, Zap, HardDrive, PlayCircle } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
 export default async function DashboardPage() {
-  // ✅ FIX ERROR 7034 & 7005: Added explicit type ': any[]'
-  let rawClips: any[] = []; 
+  const allClips = await db.select().from(clips).orderBy(desc(clips.createdAt));
   
-  try {
-    rawClips = await db.select().from(clips).orderBy(desc(clips.createdAt));
-  } catch (err) {
-    console.error("Fetch error:", err);
-  }
-
-  // Deep-serialize to prevent hydration mismatches with Dates
-  const allClips = JSON.parse(JSON.stringify(rawClips));
-
+  // High-end Metrics Calculations
+  const totalClips = allClips.length;
+  const latestClip = allClips[0];
+  
   return (
-    <div className="flex min-h-screen bg-black text-white font-sans">
-      {/* SIDEBAR */}
-      <aside className="w-64 border-r border-white/5 flex flex-col p-6 sticky top-0 h-screen bg-black/50 backdrop-blur-xl">
-        <div className="mb-10 px-2">
-          <h1 className="text-xl font-black tracking-tighter uppercase italic">
-            Clip<span className="text-purple-500">Vault</span>
-          </h1>
-        </div>
-        <nav className="flex-1 space-y-1">
-          <Link href="/dashboard" className="flex items-center gap-3 px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white font-bold text-sm shadow-lg">
-            <LayoutGrid size={18} className="text-purple-500" /> Library
-          </Link>
-          <Link href="/dashboard/upload" className="flex items-center gap-3 px-4 py-3 text-gray-400 hover:text-white font-bold text-sm transition-all group">
-            <Upload size={18} className="group-hover:text-purple-500" /> Upload
-          </Link>
-        </nav>
-      </aside>
-
-      {/* MAIN CONTENT */}
-      <main className="flex-1">
-        <header className="flex items-center justify-between p-8">
-          <div className="relative w-[450px]">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600" size={18} />
-            <input 
-              type="text" 
-              placeholder="Filter archive..." 
-              className="w-full bg-[#0A0A0A] border border-white/5 rounded-full py-2.5 pl-12 pr-4 text-sm outline-none focus:border-purple-500/20 transition-all"
-            />
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="text-right">
-              <p className="text-sm font-black uppercase italic tracking-tighter">Binkus123</p>
-              <p className="text-[9px] font-bold text-purple-500 uppercase tracking-[0.2em]">Archivist</p>
+    <div className="min-h-screen bg-[#050505] text-white pb-20">
+      {/* --- HERO SECTION: The Featured Asset --- */}
+      {latestClip && (
+        <div className="relative h-[60vh] w-full overflow-hidden border-b border-white/5">
+          <video 
+            src={latestClip.videoUrl} 
+            autoPlay muted loop playsInline
+            className="absolute inset-0 w-full h-full object-cover opacity-40 blur-[2px] scale-105"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-[#050505]/60 to-transparent" />
+          
+          <div className="relative h-full max-w-7xl mx-auto px-8 flex flex-col justify-end pb-16">
+            <div className="flex items-center gap-3 mb-4">
+              <span className="bg-purple-600 text-[10px] font-black uppercase tracking-[0.2em] px-3 py-1 rounded-full animate-pulse">
+                Latest Archive
+              </span>
+              <span className="text-white/40 text-[10px] font-bold uppercase tracking-widest">
+                Added {new Date(latestClip.createdAt!).toLocaleDateString()}
+              </span>
             </div>
-            <div className="h-10 w-10 rounded-full bg-gradient-to-tr from-purple-600 to-blue-500 border border-white/10" />
+            <h1 className="text-6xl md:text-8xl font-black italic uppercase tracking-tighter leading-none mb-6">
+              {latestClip.title}
+            </h1>
+            <p className="max-w-xl text-gray-400 font-medium text-lg mb-8 line-clamp-2">
+              {latestClip.description || "Premium high-fidelity sequence secured in the Vault. Optimized for high-end production and seamless integration."}
+            </p>
           </div>
-        </header>
-
-        <div className="px-8 pb-12">
-          <div className="flex items-center justify-between mb-8">
-             <h2 className="text-2xl font-black italic uppercase tracking-tighter">The Archive</h2>
-             <div className="text-[10px] font-black text-gray-600 tracking-widest uppercase">
-                {allClips.length} Objects Loaded
-             </div>
-          </div>
-
-          {/* Render the grid component */}
-          <VideoGrid clips={allClips} />
         </div>
+      )}
+
+      {/* --- QUICK STATS BAR --- */}
+      <div className="max-w-7xl mx-auto px-8 -translate-y-12 z-20 relative">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <StatCard icon={<Layers size={18}/>} label="Total Assets" value={totalClips} />
+          <StatCard icon={<Zap size={18}/>} label="Storage Tier" value="Unlimited" color="text-purple-500" />
+          <StatCard icon={<PlayCircle size={18}/>} label="Resolution" value="4K RAW" />
+          <StatCard icon={<HardDrive size={18}/>} label="Vault Status" value="Secure" color="text-green-500" />
+        </div>
+      </div>
+
+      {/* --- MAIN ARCHIVE SECTION --- */}
+      <main className="max-w-7xl mx-auto px-8 pt-4">
+        <div className="flex items-end justify-between mb-12 border-b border-white/5 pb-8">
+          <div>
+            <h2 className="text-3xl font-black italic uppercase tracking-tighter">Library Archive</h2>
+            <p className="text-white/30 text-[10px] font-bold uppercase tracking-[0.3em] mt-1">
+              Browsing all sequences in the encrypted vault
+            </p>
+          </div>
+          <div className="hidden md:flex gap-4">
+            {/* Future Filter Buttons placeholder */}
+            <div className="h-10 w-32 bg-white/5 border border-white/10 rounded-xl animate-pulse" />
+          </div>
+        </div>
+
+        <VideoGrid clips={allClips} />
       </main>
+    </div>
+  );
+}
+
+// Internal Styled Component for Stats
+function StatCard({ icon, label, value, color = "text-white" }: any) {
+  return (
+    <div className="bg-[#0A0A0A]/80 backdrop-blur-2xl border border-white/5 p-6 rounded-[2rem] hover:border-purple-500/30 transition-colors group">
+      <div className="flex items-center gap-3 mb-3 text-white/40 group-hover:text-purple-400 transition-colors">
+        {icon}
+        <span className="text-[9px] font-black uppercase tracking-widest">{label}</span>
+      </div>
+      <div className={`text-2xl font-black italic uppercase tracking-tighter ${color}`}>
+        {value}
+      </div>
     </div>
   );
 }
