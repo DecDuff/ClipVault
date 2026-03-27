@@ -1,23 +1,49 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Check, Zap, Hash } from 'lucide-react';
+import { Download, Check, Zap } from 'lucide-react';
 
 export default function VideoGrid({ clips }: { clips: any[] }) {
   const [isMounted, setIsMounted] = useState(false);
-  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
-  const copyIdToClipboard = async (e: React.MouseEvent, id: string) => {
+  const handleDownload = async (e: React.MouseEvent, url: string, title: string, id: string) => {
     e.preventDefault();
     e.stopPropagation();
-    // ✅ Copying Internal ID instead of the direct URL to protect your assets
-    await navigator.clipboard.writeText(id);
-    setCopiedId(id);
-    setTimeout(() => setCopiedId(null), 2000);
+    
+    setDownloadingId(id);
+
+    try {
+      // Fetch the video data
+      const response = await fetch(url);
+      const blob = await response.blob();
+      
+      // Create a temporary local URL for the blob
+      const blobUrl = window.URL.createObjectURL(blob);
+      
+      // Create a hidden anchor tag to trigger the download
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      // Clean up the filename: "My Awesome Video" -> "My_Awesome_Video.mp4"
+      link.download = `${title.replace(/\s+/g, '_')}_Vault.mp4`;
+      
+      document.body.appendChild(link);
+      link.click();
+      
+      // Clean up
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+      console.error("Download failed:", err);
+      alert("Vault error: Could not process download. Please try again.");
+    } finally {
+      // Show success state for 2 seconds
+      setTimeout(() => setDownloadingId(null), 2000);
+    }
   };
 
   if (!isMounted) {
@@ -47,14 +73,12 @@ export default function VideoGrid({ clips }: { clips: any[] }) {
           className="group relative bg-[#0A0A0A] border border-white/5 rounded-[2.5rem] overflow-hidden transition-all duration-500 hover:border-purple-500/40 hover:scale-[1.02] hover:shadow-[0_0_50px_-12px_rgba(168,85,247,0.3)]"
         >
           <div className="aspect-[9/16] bg-black relative">
-            {/* The Video Layer */}
             <video 
               src={clip.videoUrl} 
               className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-all duration-700"
               muted 
               loop 
               playsInline
-              // 🛡️ Disable right-click to prevent easy "Save Video As"
               onContextMenu={(e) => e.preventDefault()}
               onMouseOver={(e) => e.currentTarget.play()}
               onMouseOut={(e) => {
@@ -73,7 +97,6 @@ export default function VideoGrid({ clips }: { clips: any[] }) {
               </div>
             </div>
 
-            {/* Bottom Overlay Layer */}
             <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent pointer-events-none" />
             
             <div className="absolute inset-x-0 bottom-0 p-8 flex flex-col gap-1">
@@ -85,23 +108,21 @@ export default function VideoGrid({ clips }: { clips: any[] }) {
                 {clip.title}
               </h3>
 
-              {/* Action Bar */}
               <div className="flex items-center justify-between opacity-0 group-hover:opacity-100 translate-y-4 group-hover:translate-y-0 transition-all duration-500 delay-75 pointer-events-auto">
                 <button 
-                  onClick={(e) => copyIdToClipboard(e, clip.id)}
-                  className="flex items-center gap-2 bg-white/5 hover:bg-purple-500/20 backdrop-blur-md border border-white/10 px-4 py-2 rounded-xl transition-all group/btn"
+                  onClick={(e) => handleDownload(e, clip.videoUrl, clip.title, clip.id)}
+                  className="flex items-center gap-2 bg-white/10 hover:bg-purple-600 backdrop-blur-md border border-white/20 px-4 py-2 rounded-xl transition-all group/btn active:scale-95"
                 >
-                  {copiedId === clip.id ? (
-                    <Check size={14} className="text-green-400" />
+                  {downloadingId === clip.id ? (
+                    <Check size={14} className="text-white animate-in zoom-in" />
                   ) : (
-                    <Hash size={14} className="text-purple-500 group-hover/btn:text-purple-400 transition-colors" />
+                    <Download size={14} className="text-white group-hover/btn:-translate-y-0.5 transition-transform" />
                   )}
-                  <span className="text-[9px] font-black uppercase tracking-widest">
-                    {copiedId === clip.id ? 'Copied' : 'Asset ID'}
+                  <span className="text-[9px] font-black uppercase tracking-widest text-white">
+                    {downloadingId === clip.id ? 'Ready' : 'Download'}
                   </span>
                 </button>
 
-                {/* Tag Pills */}
                 <div className="flex gap-1.5">
                   {clip.tags?.slice(0, 2).map((tag: string) => (
                     <span key={tag} className="text-[7px] font-black border border-white/5 bg-white/5 px-2.5 py-1 rounded-lg uppercase tracking-widest text-gray-400">
