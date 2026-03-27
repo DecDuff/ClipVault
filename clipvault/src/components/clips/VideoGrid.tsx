@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Copy, Check, Zap } from 'lucide-react';
+import { Check, Zap, Hash } from 'lucide-react';
 
 export default function VideoGrid({ clips }: { clips: any[] }) {
   const [isMounted, setIsMounted] = useState(false);
@@ -11,10 +11,11 @@ export default function VideoGrid({ clips }: { clips: any[] }) {
     setIsMounted(true);
   }, []);
 
-  const copyToClipboard = async (e: React.MouseEvent, url: string, id: string) => {
+  const copyIdToClipboard = async (e: React.MouseEvent, id: string) => {
     e.preventDefault();
     e.stopPropagation();
-    await navigator.clipboard.writeText(url);
+    // ✅ Copying Internal ID instead of the direct URL to protect your assets
+    await navigator.clipboard.writeText(id);
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2000);
   };
@@ -53,6 +54,8 @@ export default function VideoGrid({ clips }: { clips: any[] }) {
               muted 
               loop 
               playsInline
+              // 🛡️ Disable right-click to prevent easy "Save Video As"
+              onContextMenu={(e) => e.preventDefault()}
               onMouseOver={(e) => e.currentTarget.play()}
               onMouseOut={(e) => {
                 e.currentTarget.pause();
@@ -78,23 +81,23 @@ export default function VideoGrid({ clips }: { clips: any[] }) {
                 {clip.description || 'Raw Sequence'}
               </p>
               
-              <h3 className="text-xl font-black italic uppercase tracking-tighter truncate leading-tight mb-4 transform group-hover:text-purple-50 transition-colors duration-300">
+              <h3 className="text-xl font-black italic uppercase tracking-tighter truncate leading-tight mb-4 transform group-hover:text-purple-100 transition-colors duration-300">
                 {clip.title}
               </h3>
 
               {/* Action Bar */}
               <div className="flex items-center justify-between opacity-0 group-hover:opacity-100 translate-y-4 group-hover:translate-y-0 transition-all duration-500 delay-75 pointer-events-auto">
                 <button 
-                  onClick={(e) => copyToClipboard(e, clip.videoUrl, clip.id)}
+                  onClick={(e) => copyIdToClipboard(e, clip.id)}
                   className="flex items-center gap-2 bg-white/5 hover:bg-purple-500/20 backdrop-blur-md border border-white/10 px-4 py-2 rounded-xl transition-all group/btn"
                 >
                   {copiedId === clip.id ? (
                     <Check size={14} className="text-green-400" />
                   ) : (
-                    <Copy size={14} className="group-hover/btn:text-purple-400 transition-colors" />
+                    <Hash size={14} className="text-purple-500 group-hover/btn:text-purple-400 transition-colors" />
                   )}
                   <span className="text-[9px] font-black uppercase tracking-widest">
-                    {copiedId === clip.id ? 'Copied' : 'Source'}
+                    {copiedId === clip.id ? 'Copied' : 'Asset ID'}
                   </span>
                 </button>
 
