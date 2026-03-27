@@ -2,6 +2,7 @@
 
 import { db } from '@/lib/db';
 import { clips } from '@/lib/db/schema';
+import { revalidatePath } from 'next/cache'; // ✅ Add this import
 
 interface SaveClipParams {
   url: string;
@@ -24,10 +25,13 @@ export async function saveClipToDatabase(data: SaveClipParams) {
       mood: data.mood || [],
       style: data.style || [],
       creatorId: '00000000-0000-0000-0000-000000000000',
-      // ✨ Add these to satisfy the "Missing Properties" error:
       watermarkedUrl: '', 
       thumbnailUrl: '',
     }).returning();
+
+    // ✨ This is the secret sauce: 
+    // It tells Next.js to refresh the data on the dashboard immediately.
+    revalidatePath('/dashboard'); 
 
     return result[0];
   } catch (error) {
